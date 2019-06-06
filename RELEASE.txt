@@ -1,0 +1,9 @@
+https://github.com/bbottema/smtp-connection-pool
+
+
+RELEASE NOTES SMTP Connection Pool
+
+
+v1.0.0
+
+- 

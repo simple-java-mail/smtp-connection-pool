@@ -9,10 +9,10 @@ import stormpot.Expiration;
 import javax.mail.Session;
 import javax.mail.Transport;
 
-class TestableDummyClusters extends SmtpConnectionPoolClustered {
-    TestableDummyClusters(@NotNull final AllocatorFactory<Session, SimpleDelegatingPoolable<Transport>> allocatorFactory,
-                          @NotNull final Expiration<SimpleDelegatingPoolable<Transport>> expirationPolicy,
-                          int maxPoolSize) {
+class TestableSmtpConnectionPool extends SmtpConnectionPool {
+    TestableSmtpConnectionPool(@NotNull final AllocatorFactory<Session, SimpleDelegatingPoolable<Transport>> allocatorFactory,
+                               @NotNull final Expiration<SimpleDelegatingPoolable<Transport>> expirationPolicy,
+                               int maxPoolSize) {
         super(allocatorFactory, new RoundRobinCyclingStrategy(), expirationPolicy, maxPoolSize);
     }
 }

@@ -7,7 +7,6 @@ import org.jetbrains.annotations.NotNull;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 import stormpot.Allocator;
@@ -35,11 +34,11 @@ public class SmtpConnectionPoolClusteredTest {
 	private static final UUID keyCluster2 = UUID.randomUUID();
 	private static final int MAX_POOL_SIZE = 4;
 	
-	private TestableDummyClusters clusters;
+	private TestableSmtpConnectionPoolClustered clusters;
 	
 	@Before
 	public void setupSummyClusters() {
-		clusters = new TestableDummyClusters(new DummyAllocatorFactory(), new TimeExpiration<SimpleDelegatingPoolable<Transport>>(10, SECONDS), MAX_POOL_SIZE);
+		clusters = new TestableSmtpConnectionPoolClustered(new DummyAllocatorFactory(), new TimeExpiration<SimpleDelegatingPoolable<Transport>>(10, SECONDS), MAX_POOL_SIZE);
 	}
 	
 	@Test

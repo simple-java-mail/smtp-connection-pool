@@ -12,7 +12,7 @@ import javax.mail.Transport;
 
 import static org.slf4j.LoggerFactory.getLogger;
 
-public class PoolableTransportAllocator implements Allocator<SimpleDelegatingPoolable<Transport>> {
+class PoolableTransportAllocator implements Allocator<SimpleDelegatingPoolable<Transport>> {
 
 	private static final Logger LOGGER = getLogger(PoolableTransportAllocator.class);
 

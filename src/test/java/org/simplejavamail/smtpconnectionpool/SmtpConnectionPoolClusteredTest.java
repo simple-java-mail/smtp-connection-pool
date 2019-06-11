@@ -1,48 +1,34 @@
 package org.simplejavamail.smtpconnectionpool;
 
 import org.bbottema.clusterstormpot.core.ClusterConfig;
-import org.bbottema.clusterstormpot.core.api.AllocatorFactory;
+import org.bbottema.clusterstormpot.core.ResourceClusters;
 import org.bbottema.clusterstormpot.core.api.ResourceKey.ResourceClusterKey;
 import org.bbottema.clusterstormpot.util.SimpleDelegatingPoolable;
-import org.jetbrains.annotations.NotNull;
-import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
-import stormpot.Allocator;
-import stormpot.Slot;
-import stormpot.TimeExpiration;
 
 import javax.mail.Session;
 import javax.mail.Transport;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.UUID;
 
-import static java.lang.String.format;
-import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 @RunWith(PowerMockRunner.class)
 @PrepareForTest(javax.mail.Session.class)
 @SuppressWarnings("SameParameterValue")
-public class SmtpConnectionPoolClusteredTest {
+public class SmtpConnectionPoolClusteredTest extends SmtpConnectionPoolTestBase<UUID> {
 	
 	private static final UUID keyCluster1 = UUID.randomUUID();
 	private static final UUID keyCluster2 = UUID.randomUUID();
-
-	private SmtpConnectionPoolClustered clusters;
 	
-	@Before
-	public void setupSummyClusters() {
+	public ResourceClusters<UUID, Session, SimpleDelegatingPoolable<Transport>> initClusters() {
 		SmtpClusterConfig smtpClusterConfig = new SmtpClusterConfig();
 		smtpClusterConfig.getConfigBuilder()
 				.allocatorFactory(new DummyAllocatorFactory())
 				.sizingMode(ClusterConfig.SizingMode.AUTO_MAX);
-		clusters = new SmtpConnectionPoolClustered(smtpClusterConfig);
+		return new SmtpConnectionPoolClustered(smtpClusterConfig);
 	}
 	
 	@Test
@@ -78,66 +64,5 @@ public class SmtpConnectionPoolClusteredTest {
 		assertThat(claimAndNoReleaseResource(keyCluster2)).isEqualTo("connection_C3");
 		assertThat(claimAndNoReleaseResource(keyCluster2)).isEqualTo("connection_D3");
 		assertThat(claimAndNoReleaseResource(keyCluster2)).isEqualTo("connection_C4");
-	}
-	
-	private String claimAndRelease(UUID keyCluster) throws InterruptedException {
-		final SimpleDelegatingPoolable<Transport> poolable = clusters.claimResource(new ResourceClusterKey<>(keyCluster, createSessionPoolKeyForString("server_A")));
-		poolable.release();
-		return poolable.getDelegate().toString(); // returns the mocked testable string
-	}
-	
-	private String claimAndNoRelease(UUID keyCluster) throws InterruptedException {
-		return clusters.claimResource(new ResourceClusterKey<>(keyCluster, createSessionPoolKeyForString("server_A"))).getDelegate().toString();
-	}
-
-	private static Map<String, Session> poolKeys = new HashMap<>();
-
-	@NotNull
-	private Session createSessionPoolKeyForString(String poolKey) {
-		if (!poolKeys.containsKey(poolKey)) {
-			Session mock = mock(Session.class);
-			when(mock.toString()).thenReturn(poolKey);
-			poolKeys.put(poolKey, mock);
-		}
-		return poolKeys.get(poolKey);
-	}
-
-	private String claimAndReleaseResource(UUID keyCluster) throws InterruptedException {
-		SimpleDelegatingPoolable<Transport> poolable = clusters.claimResource(keyCluster);
-		poolable.release();
-		return poolable.getDelegate().toString();
-	}
-	
-	private String claimAndNoReleaseResource(UUID keyCluster) throws InterruptedException {
-		return clusters.claimResource(keyCluster).getDelegate().toString();
-	}
-	
-	private static class DummyAllocatorFactory implements AllocatorFactory<Session, SimpleDelegatingPoolable<Transport>> {
-		@NotNull
-		@Override
-		public Allocator<SimpleDelegatingPoolable<Transport>> create(@NotNull Session serverInfo) {
-			return new DummyAllocator(serverInfo);
-		}
-	}
-	
-	private static class DummyAllocator implements Allocator<SimpleDelegatingPoolable<Transport>> {
-		private final String serverInfo;
-		private int counter = 0;
-		
-		DummyAllocator(Session serverInfo) {
-			this.serverInfo = serverInfo.toString();
-		}
-		
-		@Override
-		public SimpleDelegatingPoolable<Transport> allocate(Slot slot) {
-			final Transport s = mock(Transport.class);
-			when(s.toString()).thenReturn(format("connection%s%d", serverInfo.substring(serverInfo.indexOf('_')), ++counter));
-			return new SimpleDelegatingPoolable<>(slot, s);
-		}
-		
-		@Override
-		public void deallocate(SimpleDelegatingPoolable<Transport> poolable) {
-		
-		}
 	}
 }

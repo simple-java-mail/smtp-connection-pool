@@ -33,17 +33,16 @@ public class SmtpConnectionPoolClusteredTest {
 	
 	private static final UUID keyCluster1 = UUID.randomUUID();
 	private static final UUID keyCluster2 = UUID.randomUUID();
-	private static final int MAX_POOL_SIZE = 4;
-	
+
 	private SmtpConnectionPoolClustered clusters;
 	
 	@Before
 	public void setupSummyClusters() {
-		clusters = new SmtpConnectionPoolClustered(ClusterConfig.<Session, SimpleDelegatingPoolable<Transport>>builder()
+		SmtpClusterConfig smtpClusterConfig = new SmtpClusterConfig();
+		smtpClusterConfig.getConfigBuilder()
 				.allocatorFactory(new DummyAllocatorFactory())
-				.defaultExpirationPolicy(new TimeExpiration<SimpleDelegatingPoolable<Transport>>(10, SECONDS))
-				.defaultMaxPoolSize(MAX_POOL_SIZE)
-				.build());
+				.sizingMode(ClusterConfig.SizingMode.AUTO_MAX);
+		clusters = new SmtpConnectionPoolClustered(smtpClusterConfig);
 	}
 	
 	@Test

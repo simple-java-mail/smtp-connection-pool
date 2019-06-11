@@ -1,5 +1,6 @@
 package org.simplejavamail.smtpconnectionpool;
 
+import org.bbottema.clusterstormpot.core.ClusterConfig;
 import org.bbottema.clusterstormpot.core.api.AllocatorFactory;
 import org.bbottema.clusterstormpot.core.api.ResourceKey.ResourceClusterKey;
 import org.bbottema.clusterstormpot.util.SimpleDelegatingPoolable;
@@ -34,11 +35,15 @@ public class SmtpConnectionPoolClusteredTest {
 	private static final UUID keyCluster2 = UUID.randomUUID();
 	private static final int MAX_POOL_SIZE = 4;
 	
-	private TestableSmtpConnectionPoolClustered clusters;
+	private SmtpConnectionPoolClustered clusters;
 	
 	@Before
 	public void setupSummyClusters() {
-		clusters = new TestableSmtpConnectionPoolClustered(new DummyAllocatorFactory(), new TimeExpiration<SimpleDelegatingPoolable<Transport>>(10, SECONDS), MAX_POOL_SIZE);
+		clusters = new SmtpConnectionPoolClustered(ClusterConfig.<Session, SimpleDelegatingPoolable<Transport>>builder()
+				.allocatorFactory(new DummyAllocatorFactory())
+				.defaultExpirationPolicy(new TimeExpiration<SimpleDelegatingPoolable<Transport>>(10, SECONDS))
+				.defaultMaxPoolSize(MAX_POOL_SIZE)
+				.build());
 	}
 	
 	@Test

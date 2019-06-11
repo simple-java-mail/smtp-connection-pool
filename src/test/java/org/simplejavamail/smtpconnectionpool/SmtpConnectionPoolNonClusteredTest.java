@@ -1,5 +1,6 @@
 package org.simplejavamail.smtpconnectionpool;
 
+import org.bbottema.clusterstormpot.core.ClusterConfig;
 import org.bbottema.clusterstormpot.core.api.AllocatorFactory;
 import org.bbottema.clusterstormpot.core.api.ResourceKey.CyclingPoolKey;
 import org.bbottema.clusterstormpot.util.SimpleDelegatingPoolable;
@@ -30,15 +31,19 @@ public class SmtpConnectionPoolNonClusteredTest {
 	
 	private static final int MAX_POOL_SIZE = 4;
 	
-	private TestableSmtpConnectionPool clusters;
+	private SmtpConnectionPool clusters;
 	
 	@Before
 	public void setupSummyClusters() {
-		clusters = new TestableSmtpConnectionPool(new DummyAllocatorFactory(), new TimeExpiration<SimpleDelegatingPoolable<Transport>>(10, SECONDS), MAX_POOL_SIZE);
+		clusters = new SmtpConnectionPool(ClusterConfig.<Session, SimpleDelegatingPoolable<Transport>>builder()
+				.allocatorFactory(new DummyAllocatorFactory())
+				.defaultExpirationPolicy(new TimeExpiration<SimpleDelegatingPoolable<Transport>>(10, SECONDS))
+				.defaultMaxPoolSize(MAX_POOL_SIZE)
+				.build());
 	}
 	
 	@Test
-	public void testRoundRobinDummyClusters() throws InterruptedException {
+	public void testRoundRobinDummyClusters() {
 		clusters.registerResourcePool(new CyclingPoolKey<>(createSessionPoolKeyForString("server_A")));
 		clusters.registerResourcePool(new CyclingPoolKey<>(createSessionPoolKeyForString("server_B")));
 		clusters.registerResourcePool(new CyclingPoolKey<>(createSessionPoolKeyForString("server_C")));

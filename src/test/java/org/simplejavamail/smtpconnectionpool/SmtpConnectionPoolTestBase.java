@@ -2,7 +2,7 @@ package org.simplejavamail.smtpconnectionpool;
 
 import org.bbottema.clusterstormpot.core.ResourceClusters;
 import org.bbottema.clusterstormpot.core.api.AllocatorFactory;
-import org.bbottema.clusterstormpot.core.api.ResourceKey.ResourceClusterKey;
+import org.bbottema.clusterstormpot.core.api.ResourceKey.ResourceClusterAndPoolKey;
 import org.bbottema.clusterstormpot.util.SimpleDelegatingPoolable;
 import org.jetbrains.annotations.NotNull;
 import org.junit.Before;
@@ -33,14 +33,14 @@ abstract class SmtpConnectionPoolTestBase<ClusterKey> {
 	
 	@SuppressWarnings("SameParameterValue")
 	String claimAndRelease(ClusterKey clusterKey) throws InterruptedException {
-		final SimpleDelegatingPoolable<Transport> poolable = clusters.claimResource(new ResourceClusterKey<>(clusterKey, createSessionPoolKeyForString("server_A")));
+		final SimpleDelegatingPoolable<Transport> poolable = clusters.claimResourceFromPool(new ResourceClusterAndPoolKey<>(clusterKey, createSessionPoolKeyForString("server_A")));
 		poolable.release();
 		return poolable.getDelegate().toString(); // returns the mocked testable string
 	}
 	
 	@SuppressWarnings("SameParameterValue")
 	String claimAndNoRelease(ClusterKey clusterKey) throws InterruptedException {
-		return clusters.claimResource(new ResourceClusterKey<>(clusterKey, createSessionPoolKeyForString("server_A"))).getDelegate().toString();
+		return clusters.claimResourceFromPool(new ResourceClusterAndPoolKey<>(clusterKey, createSessionPoolKeyForString("server_A"))).getDelegate().toString();
 	}
 	
 	@NotNull
@@ -55,13 +55,13 @@ abstract class SmtpConnectionPoolTestBase<ClusterKey> {
 	
 	@SuppressWarnings("SameParameterValue")
 	String claimAndReleaseResource(ClusterKey clusterKey) throws InterruptedException {
-		SimpleDelegatingPoolable<Transport> poolable = clusters.claimResource(clusterKey);
+		SimpleDelegatingPoolable<Transport> poolable = clusters.claimResourceFromCluster(clusterKey);
 		poolable.release();
 		return poolable.getDelegate().toString();
 	}
 	
 	String claimAndNoReleaseResource(ClusterKey clusterKey) throws InterruptedException {
-		return clusters.claimResource(clusterKey).getDelegate().toString();
+		return clusters.claimResourceFromCluster(clusterKey).getDelegate().toString();
 	}
 	
 	protected static class DummyAllocatorFactory implements AllocatorFactory<Session, SimpleDelegatingPoolable<Transport>> {

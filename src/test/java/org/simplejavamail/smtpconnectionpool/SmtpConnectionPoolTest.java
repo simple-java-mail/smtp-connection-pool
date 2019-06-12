@@ -2,7 +2,7 @@ package org.simplejavamail.smtpconnectionpool;
 
 import org.bbottema.clusterstormpot.core.ClusterConfig;
 import org.bbottema.clusterstormpot.core.ResourceClusters;
-import org.bbottema.clusterstormpot.core.api.ResourceKey.CyclingPoolKey;
+import org.bbottema.clusterstormpot.core.api.ResourceKey.ResourcePoolKey;
 import org.bbottema.clusterstormpot.util.SimpleDelegatingPoolable;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -27,10 +27,10 @@ public class SmtpConnectionPoolTest extends SmtpConnectionPoolTestBase<Session> 
 	
 	@Test
 	public void testRoundRobinDummyClusters() {
-		clusters.registerResourcePool(new CyclingPoolKey<>(createSessionPoolKeyForString("server_A")));
-		clusters.registerResourcePool(new CyclingPoolKey<>(createSessionPoolKeyForString("server_B")));
-		clusters.registerResourcePool(new CyclingPoolKey<>(createSessionPoolKeyForString("server_C")));
-		clusters.registerResourcePool(new CyclingPoolKey<>(createSessionPoolKeyForString("server_D")));
+		clusters.registerResourcePool(new ResourcePoolKey<>(createSessionPoolKeyForString("server_A")));
+		clusters.registerResourcePool(new ResourcePoolKey<>(createSessionPoolKeyForString("server_B")));
+		clusters.registerResourcePool(new ResourcePoolKey<>(createSessionPoolKeyForString("server_C")));
+		clusters.registerResourcePool(new ResourcePoolKey<>(createSessionPoolKeyForString("server_D")));
 		
 		// FIXME perform tests
 	}

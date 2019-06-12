@@ -2,7 +2,7 @@ package org.simplejavamail.smtpconnectionpool;
 
 import org.bbottema.clusterstormpot.core.ClusterConfig;
 import org.bbottema.clusterstormpot.core.ResourceClusters;
-import org.bbottema.clusterstormpot.core.api.ResourceKey.ResourceClusterKey;
+import org.bbottema.clusterstormpot.core.api.ResourceKey.ResourceClusterAndPoolKey;
 import org.bbottema.clusterstormpot.util.SimpleDelegatingPoolable;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -33,13 +33,13 @@ public class SmtpConnectionPoolClusteredTest extends SmtpConnectionPoolTestBase<
 	
 	@Test
 	public void testRoundRobinDummyClusters() throws InterruptedException {
-		clusters.registerResourcePool(new ResourceClusterKey<>(keyCluster1, createSessionPoolKeyForString("server_A")));
-		clusters.registerResourcePool(new ResourceClusterKey<>(keyCluster1, createSessionPoolKeyForString("server_B")));
-		clusters.registerResourcePool(new ResourceClusterKey<>(keyCluster2, createSessionPoolKeyForString("server_C")));
-		clusters.registerResourcePool(new ResourceClusterKey<>(keyCluster2, createSessionPoolKeyForString("server_D")));
+		clusters.registerResourcePool(new ResourceClusterAndPoolKey<>(keyCluster1, createSessionPoolKeyForString("server_A")));
+		clusters.registerResourcePool(new ResourceClusterAndPoolKey<>(keyCluster1, createSessionPoolKeyForString("server_B")));
+		clusters.registerResourcePool(new ResourceClusterAndPoolKey<>(keyCluster2, createSessionPoolKeyForString("server_C")));
+		clusters.registerResourcePool(new ResourceClusterAndPoolKey<>(keyCluster2, createSessionPoolKeyForString("server_D")));
 		
 		// first claim on a few specific servers
-		SimpleDelegatingPoolable<Transport> connectionA1 = clusters.claimResource(new ResourceClusterKey<>(keyCluster1, createSessionPoolKeyForString("server_A")));
+		SimpleDelegatingPoolable<Transport> connectionA1 = clusters.claimResourceFromPool(new ResourceClusterAndPoolKey<>(keyCluster1, createSessionPoolKeyForString("server_A")));
 		assertThat(connectionA1.getDelegate().toString()).isEqualTo("connection_A1");
 		assertThat(claimAndNoRelease(keyCluster1)).isEqualTo("connection_A2");
 		assertThat(claimAndRelease(keyCluster1)).isEqualTo("connection_A3");

@@ -40,7 +40,7 @@ public class SmtpConnectionPoolClusteredTest extends SmtpConnectionPoolTestBase<
 		
 		// first claim on a few specific servers
 		SimpleDelegatingPoolable<Transport> connectionA1 = clusters.claimResourceFromPool(new ResourceClusterAndPoolKey<>(keyCluster1, createSessionPoolKeyForString("server_A")));
-		assertThat(connectionA1.getDelegate().toString()).isEqualTo("connection_A1");
+		assertThat(connectionA1.getAllocatedDelegate().toString()).isEqualTo("connection_A1");
 		assertThat(claimAndNoRelease(keyCluster1)).isEqualTo("connection_A2");
 		assertThat(claimAndRelease(keyCluster1)).isEqualTo("connection_A3");
 		

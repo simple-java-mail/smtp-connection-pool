@@ -33,6 +33,6 @@ class PoolableTransportAllocator implements Allocator<SimpleDelegatingPoolable<T
 	public void deallocate(final SimpleDelegatingPoolable<Transport> poolable)
 			throws MessagingException {
 		LOGGER.trace("closing transport...");
-		poolable.getDelegate().close();
+		poolable.getAllocatedDelegate().close();
 	}
 }

@@ -35,12 +35,13 @@ abstract class SmtpConnectionPoolTestBase<ClusterKey> {
 	String claimAndRelease(ClusterKey clusterKey) throws InterruptedException {
 		final SimpleDelegatingPoolable<Transport> poolable = clusters.claimResourceFromPool(new ResourceClusterAndPoolKey<>(clusterKey, createSessionPoolKeyForString("server_A")));
 		poolable.release();
-		return poolable.getDelegate().toString(); // returns the mocked testable string
+		return poolable.getAllocatedDelegate().toString(); // returns the mocked testable string
 	}
 	
 	@SuppressWarnings("SameParameterValue")
 	String claimAndNoRelease(ClusterKey clusterKey) throws InterruptedException {
-		return clusters.claimResourceFromPool(new ResourceClusterAndPoolKey<>(clusterKey, createSessionPoolKeyForString("server_A"))).getDelegate().toString();
+		ResourceClusterAndPoolKey<ClusterKey, Session> resourceKey = new ResourceClusterAndPoolKey<>(clusterKey, createSessionPoolKeyForString("server_A"));
+		return clusters.claimResourceFromPool(resourceKey).getAllocatedDelegate().toString();
 	}
 	
 	@NotNull
@@ -57,11 +58,11 @@ abstract class SmtpConnectionPoolTestBase<ClusterKey> {
 	String claimAndReleaseResource(ClusterKey clusterKey) throws InterruptedException {
 		SimpleDelegatingPoolable<Transport> poolable = clusters.claimResourceFromCluster(clusterKey);
 		poolable.release();
-		return poolable.getDelegate().toString();
+		return poolable.getAllocatedDelegate().toString();
 	}
 	
 	String claimAndNoReleaseResource(ClusterKey clusterKey) throws InterruptedException {
-		return clusters.claimResourceFromCluster(clusterKey).getDelegate().toString();
+		return clusters.claimResourceFromCluster(clusterKey).getAllocatedDelegate().toString();
 	}
 	
 	protected static class DummyAllocatorFactory implements AllocatorFactory<Session, SimpleDelegatingPoolable<Transport>> {

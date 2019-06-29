@@ -1,13 +1,12 @@
 package org.simplejavamail.smtpconnectionpool;
 
-import org.bbottema.clusterstormpot.core.ResourceClusters;
-import org.bbottema.clusterstormpot.core.api.AllocatorFactory;
-import org.bbottema.clusterstormpot.core.api.ResourceKey.ResourceClusterAndPoolKey;
-import org.bbottema.clusterstormpot.util.SimpleDelegatingPoolable;
+import org.bbottema.clusteredobjectpool.core.ResourceClusters;
+import org.bbottema.clusteredobjectpool.core.api.AllocatorFactory;
+import org.bbottema.clusteredobjectpool.core.api.ResourceKey.ResourceClusterAndPoolKey;
+import org.bbottema.genericobjectpool.Allocator;
+import org.bbottema.genericobjectpool.PoolableObject;
 import org.jetbrains.annotations.NotNull;
 import org.junit.Before;
-import stormpot.Allocator;
-import stormpot.Slot;
 
 import javax.mail.Session;
 import javax.mail.Transport;
@@ -15,6 +14,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import static java.lang.String.format;
+import static java.util.Objects.requireNonNull;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -22,26 +22,26 @@ abstract class SmtpConnectionPoolTestBase<ClusterKey> {
 	
 	private static Map<String, Session> poolKeys = new HashMap<>();
 	
-	ResourceClusters<ClusterKey, Session, SimpleDelegatingPoolable<Transport>> clusters;
+	ResourceClusters<ClusterKey, Session, Transport> clusters;
 	
 	@Before
 	public void setup() {
 		clusters = initClusters();
 	}
 	
-	abstract ResourceClusters<ClusterKey, Session, SimpleDelegatingPoolable<Transport>> initClusters();
+	abstract ResourceClusters<ClusterKey, Session, Transport> initClusters();
 	
 	@SuppressWarnings("SameParameterValue")
 	String claimAndRelease(ClusterKey clusterKey) throws InterruptedException {
-		final SimpleDelegatingPoolable<Transport> poolable = clusters.claimResourceFromPool(new ResourceClusterAndPoolKey<>(clusterKey, createSessionPoolKeyForString("server_A")));
-		poolable.release();
-		return poolable.getAllocatedDelegate().toString(); // returns the mocked testable string
+		final PoolableObject<Transport> poolable = clusters.claimResourceFromPool(new ResourceClusterAndPoolKey<>(clusterKey, createSessionPoolKeyForString("server_A")));
+		requireNonNull(poolable).release();
+		return poolable.getAllocatedObject().toString(); // returns the mocked testable string
 	}
 	
 	@SuppressWarnings("SameParameterValue")
 	String claimAndNoRelease(ClusterKey clusterKey) throws InterruptedException {
 		ResourceClusterAndPoolKey<ClusterKey, Session> resourceKey = new ResourceClusterAndPoolKey<>(clusterKey, createSessionPoolKeyForString("server_A"));
-		return clusters.claimResourceFromPool(resourceKey).getAllocatedDelegate().toString();
+		return requireNonNull(clusters.claimResourceFromPool(resourceKey)).getAllocatedObject().toString();
 	}
 	
 	@NotNull
@@ -56,24 +56,24 @@ abstract class SmtpConnectionPoolTestBase<ClusterKey> {
 	
 	@SuppressWarnings("SameParameterValue")
 	String claimAndReleaseResource(ClusterKey clusterKey) throws InterruptedException {
-		SimpleDelegatingPoolable<Transport> poolable = clusters.claimResourceFromCluster(clusterKey);
-		poolable.release();
-		return poolable.getAllocatedDelegate().toString();
+		PoolableObject<Transport> poolable = clusters.claimResourceFromCluster(clusterKey);
+		requireNonNull(poolable).release();
+		return poolable.getAllocatedObject().toString();
 	}
 	
 	String claimAndNoReleaseResource(ClusterKey clusterKey) throws InterruptedException {
-		return clusters.claimResourceFromCluster(clusterKey).getAllocatedDelegate().toString();
+		return requireNonNull(clusters.claimResourceFromCluster(clusterKey)).getAllocatedObject().toString();
 	}
 	
-	protected static class DummyAllocatorFactory implements AllocatorFactory<Session, SimpleDelegatingPoolable<Transport>> {
+	protected static class DummyAllocatorFactory implements AllocatorFactory<Session, Transport> {
 		@NotNull
 		@Override
-		public Allocator<SimpleDelegatingPoolable<Transport>> create(@NotNull Session serverInfo) {
+		public Allocator<Transport> create(@NotNull Session serverInfo) {
 			return new DummyAllocator(serverInfo);
 		}
 	}
 	
-	private static class DummyAllocator implements Allocator<SimpleDelegatingPoolable<Transport>> {
+	private static class DummyAllocator extends Allocator<Transport> {
 		private final String serverInfo;
 		private int counter = 0;
 		
@@ -81,15 +81,16 @@ abstract class SmtpConnectionPoolTestBase<ClusterKey> {
 			this.serverInfo = serverInfo.toString();
 		}
 		
+		@NotNull
 		@Override
-		public SimpleDelegatingPoolable<Transport> allocate(Slot slot) {
+		public Transport allocate() {
 			final Transport s = mock(Transport.class);
 			when(s.toString()).thenReturn(format("connection%s%d", serverInfo.substring(serverInfo.indexOf('_')), ++counter));
-			return new SimpleDelegatingPoolable<>(slot, s);
+			return s;
 		}
 		
 		@Override
-		public void deallocate(SimpleDelegatingPoolable<Transport> poolable) {
+		public void deallocate(@NotNull Transport transport) {
 		
 		}
 	}

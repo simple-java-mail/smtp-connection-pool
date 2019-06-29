@@ -61,8 +61,8 @@
 		</dependency>
 		<dependency>
 			<groupId>com.github.bbottema</groupId>
-			<artifactId>cluster-stormpot</artifactId>
-			<version>0.0.1-SNAPSHOT</version>
+			<artifactId>clustered-object-pool</artifactId>
+			<version>1.0.0-SNAPSHOT</version>
 		</dependency>
 
 		<dependency><!-- Gives us @NotNull and @Nullable -->

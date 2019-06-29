@@ -1,9 +1,7 @@
 package org.simplejavamail.smtpconnectionpool;
 
-import org.bbottema.clusterstormpot.core.ClusterConfig;
-import org.bbottema.clusterstormpot.core.ResourceClusters;
-import org.bbottema.clusterstormpot.core.api.ResourceKey.ResourcePoolKey;
-import org.bbottema.clusterstormpot.util.SimpleDelegatingPoolable;
+import org.bbottema.clusteredobjectpool.core.ResourceClusters;
+import org.bbottema.clusteredobjectpool.core.api.ResourceKey.ResourcePoolKey;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.powermock.core.classloader.annotations.PrepareForTest;
@@ -17,11 +15,11 @@ import javax.mail.Transport;
 @SuppressWarnings("SameParameterValue")
 public class SmtpConnectionPoolTest extends SmtpConnectionPoolTestBase<Session> {
 	
-	public ResourceClusters<Session, Session, SimpleDelegatingPoolable<Transport>> initClusters() {
+	public ResourceClusters<Session, Session, Transport> initClusters() {
 		SmtpClusterConfig smtpClusterConfig = new SmtpClusterConfig();
 		smtpClusterConfig.getConfigBuilder()
 				.allocatorFactory(new DummyAllocatorFactory())
-				.sizingMode(ClusterConfig.SizingMode.AUTO_MAX);
+				.defaultCorePoolSize(SmtpClusterConfig.MAX_POOL_SIZE);
 		return new SmtpConnectionPool(smtpClusterConfig);
 	}
 	

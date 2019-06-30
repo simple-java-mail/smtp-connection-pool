@@ -62,7 +62,8 @@ SmtpConnectionPoolClustered pool = new SmtpConnectionPoolClustered(smtpClusterCo
 ```
 
 New clusters and pools are created on-demand with the global defaults, based on cluster keys (for example a UUID) and pool keys (Session instances) passed to the claim invocations. You can however 
-**configure different behavior for specific clusters and pools (servers)**:
+
+#### Configure different behavior for specific clusters and pools (servers)
 
 ```java
 // continuing the above code example...

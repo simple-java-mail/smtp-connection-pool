@@ -73,7 +73,7 @@ UUID keyCluster2 = UUID.randomUUID();
 Session sessionServerA = ...;
 Session sessionServerB = ...;
 
-// define different behavior for server A
+// define different behavior only for server A in cluster 1
 pool.registerResourcePool(new ResourceClusterAndPoolKey<>(keyCluster1, sessionServerA),
     new TimeoutSinceCreationExpirationPolicy<Transport>(30, SECONDS),
     4, // core pool size of eagerly opened and available connections

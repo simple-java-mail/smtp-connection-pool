@@ -56,7 +56,7 @@ smtpClusterConfig.getConfigBuilder()
         // default is never-expire, this one closes connections randomly between 5 to 10 seconds after last use
         .defaultExpirationPolicy(new SpreadedTimeoutSinceLastAllocationExpirationPolicy<Transport>(5, 10, SECONDS)) 
         .cyclingStrategy(new RandomAccessCyclingStrategy()) // default is round-robin
-        .claimTimeout(new Timeout(30, SECONDS)); // wait for available connection until max 30 seconds
+        .claimTimeout(new Timeout(30, SECONDS)); // wait for available connection until max 30 seconds, default is indefinately
         
 SmtpConnectionPoolClustered pool = new SmtpConnectionPoolClustered(smtpClusterConfig);
 ```

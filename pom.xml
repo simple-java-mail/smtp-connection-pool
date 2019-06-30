@@ -7,8 +7,9 @@
 	<artifactId>smtp-connection-pool</artifactId>
 	<packaging>jar</packaging>
 	<name>SMTP Connection Pool</name>
-	<version>0.0.1-SNAPSHOT</version>
-	<description>SMTP connection pooling with clustering support</description>
+	<version>1.0.0-SNAPSHOT</version>
+	<description>Lightweight SMTP connection pool with clustering support, wait/release mechanism,
+		connection lifecycle management, eager/lazy loading pool with auto-expiry policy support</description>
 	<url>https://github.com/simple-java-mail/smtp-connection-pool</url>
 
 	<licenses>

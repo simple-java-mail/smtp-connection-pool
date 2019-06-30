@@ -32,9 +32,8 @@ To keep API simple, this library provides both a simple Connection Pool class as
 
 #### Creating a simple SMTP connection pool
 
-Simple on-demand (lazy loading) connection pool with default size of 4, where the connections remain open until the pool is shut down.
-
 ```java
+// Simple on-demand (lazy loading) connection pool with default size of 4, where the connections remain open until the pool is shut down.
 SmtpConnectionPool pool = new SmtpConnectionPool(new SmtpClusterConfig());
 
 PoolableObject<Transport> pollableTransport = pool.claimResourceFromCluster(session);

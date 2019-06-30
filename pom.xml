@@ -65,6 +65,11 @@
 			<artifactId>clustered-object-pool</artifactId>
 			<version>1.0.0</version>
 		</dependency>
+		<dependency>
+			<groupId>com.github.bbottema</groupId>
+			<artifactId>clustered-object-pool</artifactId>
+			<version>1.0.0</version>
+		</dependency>
 
 		<dependency><!-- Gives us @NotNull and @Nullable -->
 			<groupId>org.jetbrains</groupId>

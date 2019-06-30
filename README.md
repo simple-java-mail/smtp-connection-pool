@@ -41,7 +41,7 @@ PoolableObject<Transport> pollableTransport = pool.claimResourceFromCluster(sess
 // ... send the email
 pollableTransport.release(); // make available in the connection pool again
 ```
-The pool looks like a cluster and you still claim connections from a cluster, but for each server (Session instance) a new cluster is defined under the hood so effectively you don't cluster 
+The pool looks like a cluster and you still claim connections from a cluster, but for each server (Session instance) a new cluster is defined under the hood so effectively nothing is clustered. 
 anything.
 
 #### Creating a completely customized clustering SMTP connection pool

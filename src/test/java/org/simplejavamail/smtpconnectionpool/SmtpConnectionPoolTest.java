@@ -13,9 +13,9 @@ import javax.mail.Transport;
 @RunWith(PowerMockRunner.class)
 @PrepareForTest(Session.class)
 @SuppressWarnings("SameParameterValue")
-public class SmtpConnectionPoolTest extends SmtpConnectionPoolTestBase<Session> {
+public class SmtpConnectionPoolTest extends SmtpConnectionPoolTestBase<SmtpConnectionPool, Session> {
 	
-	public ResourceClusters<Session, Session, Transport> initClusters() {
+	public SmtpConnectionPool initClusters() {
 		SmtpClusterConfig smtpClusterConfig = new SmtpClusterConfig();
 		smtpClusterConfig.getConfigBuilder()
 				.allocatorFactory(new DummyAllocatorFactory())

@@ -18,18 +18,18 @@ import static java.util.Objects.requireNonNull;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-abstract class SmtpConnectionPoolTestBase<ClusterKey> {
+abstract class SmtpConnectionPoolTestBase<PoolType extends ResourceClusters<ClusterKey, Session, Transport>, ClusterKey> {
 	
 	private static Map<String, Session> poolKeys = new HashMap<>();
 	
-	ResourceClusters<ClusterKey, Session, Transport> clusters;
+	PoolType clusters;
 	
 	@Before
 	public void setup() {
 		clusters = initClusters();
 	}
 	
-	abstract ResourceClusters<ClusterKey, Session, Transport> initClusters();
+	abstract PoolType initClusters();
 	
 	@SuppressWarnings("SameParameterValue")
 	String claimAndRelease(ClusterKey clusterKey) throws InterruptedException {

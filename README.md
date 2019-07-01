@@ -5,6 +5,16 @@ connection lifecycle management, eager/lazy loading pool with auto-expiry policy
 
 [API Documentation](https://www.javadoc.io/doc/org.simplejavamail/smtp-connection-pool/1.0.0)
 
+## about
+
+This library aims to improve performance for sending emails using Java Mail (now Jakarta Mail).
+
+It represents three improvements over usual manual `Session.getTransport().connect()` approach:
+   
+   1. Support Transport (open) connection reuse over multiple threads
+   2. Implement an SMTP connection pool so we have multiple reusable Transport connections (including lazy / eager initialization)
+   3. Take performance to the next level and support clustered SMTP servers, so you can really scale up using multiple SMPT server if your use case requires it.
+
 ## Setup
 
 Maven Dependency Setup

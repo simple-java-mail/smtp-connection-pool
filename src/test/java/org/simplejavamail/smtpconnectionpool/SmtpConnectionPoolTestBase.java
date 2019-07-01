@@ -20,7 +20,7 @@ import static org.mockito.Mockito.when;
 
 abstract class SmtpConnectionPoolTestBase<PoolType extends ResourceClusters<ClusterKey, Session, Transport>, ClusterKey> {
 	
-	private static Map<String, Session> poolKeys = new HashMap<>();
+	private static final Map<String, Session> poolKeys = new HashMap<>();
 	
 	PoolType clusters;
 	
@@ -65,7 +65,7 @@ abstract class SmtpConnectionPoolTestBase<PoolType extends ResourceClusters<Clus
 		return requireNonNull(clusters.claimResourceFromCluster(clusterKey)).getAllocatedObject().toString();
 	}
 	
-	protected static class DummyAllocatorFactory implements AllocatorFactory<Session, Transport> {
+	static class DummyAllocatorFactory implements AllocatorFactory<Session, Transport> {
 		@NotNull
 		@Override
 		public Allocator<Transport> create(@NotNull Session serverInfo) {
@@ -90,7 +90,7 @@ abstract class SmtpConnectionPoolTestBase<PoolType extends ResourceClusters<Clus
 		}
 		
 		@Override
-		public void deallocate(@NotNull Transport transport) {
+		public void deallocate(Transport transport) {
 		
 		}
 	}

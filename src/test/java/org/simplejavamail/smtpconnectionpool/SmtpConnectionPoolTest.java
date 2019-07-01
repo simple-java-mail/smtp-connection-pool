@@ -1,6 +1,5 @@
 package org.simplejavamail.smtpconnectionpool;
 
-import org.bbottema.clusteredobjectpool.core.ResourceClusters;
 import org.bbottema.clusteredobjectpool.core.api.ResourceKey.ResourcePoolKey;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -8,7 +7,6 @@ import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
 import javax.mail.Session;
-import javax.mail.Transport;
 
 @RunWith(PowerMockRunner.class)
 @PrepareForTest(Session.class)

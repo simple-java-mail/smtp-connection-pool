@@ -2,7 +2,7 @@
 
 # smtp-connection-pool
 
-smtp-connection-pool is a lightweight SMTP connection pool with clustering support, wait/release mechanism, 
+smtp-connection-pool is an ultra lightweight SMTP connection pool with clustering support, claim/wait/release mechanism, 
 connection lifecycle management, eager/lazy loading pool with auto-expiry policy support.
 
 [API Documentation](https://www.javadoc.io/doc/org.simplejavamail/smtp-connection-pool/1.0.0)

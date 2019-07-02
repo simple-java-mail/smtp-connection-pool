@@ -323,17 +323,10 @@
 						<java>SLASHSTAR_STYLE</java>
 					</mapping>
 					<includes>
-						<include>**/*.java</include>
+						<include>src/main/java/**/*.java</include>
 					</includes>
 				</configuration>
 				<executions>
-					<execution>
-						<id>clean-remove</id>
-						<phase>clean</phase>
-						<goals>
-							<goal>remove</goal>
-						</goals>
-					</execution>
 					<execution>
 						<id>compile-format</id>
 						<phase>compile</phase>

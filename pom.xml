@@ -64,7 +64,7 @@
 		<dependency>
 			<groupId>com.github.bbottema</groupId>
 			<artifactId>clustered-object-pool</artifactId>
-			<version>1.0.8</version>
+			<version>1.0.9</version>
 		</dependency>
 
 		<dependency><!-- Gives us @NotNull and @Nullable -->

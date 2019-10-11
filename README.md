@@ -16,7 +16,7 @@ It represents three improvements over usual manual `Session.getTransport().conne
    
    1. Support Transport (open) connection reuse over multiple threads
    2. Implement an SMTP connection pool so we have multiple reusable Transport connections (including lazy / eager initialization)
-   3. Take performance to the next level and support clustered SMTP servers, so you can really scale up using multiple SMPT server if your use case requires it.
+   3. Take performance to the next level and support clustered SMTP servers, so you can really scale up SMPT servers if your use-case requires it.
 
 This library builds on top of [clustered-object-pool](https://github.com/bbottema/clustered-object-pool).
 

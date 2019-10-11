@@ -59,7 +59,7 @@ connections. You rarely need this kind of performance, but sending news letters 
 <dependency>
 	<groupId>org.simplejavamail</groupId>
 	<artifactId>smtp-connection-pool</artifactId>
-	<version>x.y.z</version>
+	<version>1.0.7</version>
 </dependency>
 ```
 

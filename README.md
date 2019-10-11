@@ -38,7 +38,7 @@ superclass.
 
 #### Essential performance boost of using a connection pool
 
-A very common scenario is to have a single connection being reused over many email sending threads and usually this is enough. This can be achieved by having 1 cluster with 1 pool of 
+A very common scenario is to have a single connection being reused over many email-sending threads and usually this is enough. This can be achieved by having 1 cluster with 1 pool of 
 size 1. This already gives a real boost over not using a connection pool, since threads using the same transport but each establishing a new connection each takes half of the time of sending the 
 email itself.
 

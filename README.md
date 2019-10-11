@@ -20,8 +20,9 @@ It represents three improvements over usual manual `Session.getTransport().conne
 
 This library builds on top of [clustered-object-pool](https://github.com/bbottema/clustered-object-pool).
 
-**Note:** This library doesn't configure a mail `Session` instances: it only manages the connection you can make with them. This library leaves it up to the user on how the connection behaves (to 
-which server, proxy, SSL, TLS, session / connection timeouts etc). You should use [Simple Java Mail](https://github.com/bbottema/simple-java-mail) if you want a complete solution to sending 
+**Note:** This library doesn't configure mail `Session` instances itself: it only manages the connection you can make with them. 
+This library leaves it up to the user on how the connection behaves (to which server, proxy, SSL, TLS, session / connection timeouts etc). 
+You should use [Simple Java Mail](https://github.com/bbottema/simple-java-mail) if you want a complete solution to sending 
 emails (it uses SMTP Connection Pool). 
 
 #### possible approaches

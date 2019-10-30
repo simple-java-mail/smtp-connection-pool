@@ -328,8 +328,8 @@
 				</configuration>
 				<executions>
 					<execution>
-						<id>compile-format</id>
-						<phase>compile</phase>
+						<id>before-compile-format</id>
+						<phase>process-sources</phase>
 						<goals>
 							<goal>format</goal>
 						</goals>

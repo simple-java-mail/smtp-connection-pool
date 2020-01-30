@@ -4,6 +4,11 @@ https://github.com/bbottema/smtp-connection-pool
 RELEASE NOTES SMTP Connection Pool
 
 
-v1.0.0 - 1.0.2
+v1.0.8 (30 Januari 2020)
+
+- Updated dependency on clustered-object-pool, which fixes a bug when waiting for pools to shutdown
+
+
+v1.0.0 - 1.0.7
 
 - Initial release

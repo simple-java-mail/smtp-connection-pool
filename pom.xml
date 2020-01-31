@@ -13,7 +13,7 @@
 	<artifactId>smtp-connection-pool</artifactId>
 	<packaging>jar</packaging>
 	<name>SMTP Connection Pool</name>
-	<version>1.0.10</version>
+	<version>1.1.0</version>
 	<description>Lightweight SMTP connection pool with clustering support, wait/release mechanism,
 		connection lifecycle management, eager/lazy loading pool with auto-expiry policy support</description>
 	<url>https://github.com/simple-java-mail/smtp-connection-pool</url>

@@ -8,6 +8,11 @@
 smtp-connection-pool is an ultra lightweight SMTP connection pool with clustering support, claim/wait/release mechanism, 
 connection lifecycle management, eager/lazy loading pool with auto-expiry policy support.
 
+This library does *not* take care of creating or sending emails; it just pools (hot) reusable Transport instances using Session
+instances provided by the user.
+
+This SMTP connection pool is used by Simple Java Mail, which offers a complete solutions to creating, converting and sending emails.
+
 ## about
 
 This library aims to improve performance for sending emails using Java Mail (now Jakarta Mail).

@@ -34,7 +34,7 @@ This library leaves it up to the user on how the connection behaves (to which se
 There are a couple of scenario's you can solve with clustered-object-pool:
 - Have **1 cluster with 1 pool of size 1**. Where you have one SMTP connection, but can share/reuse it among threads.
 - Have **1 cluster with 1 pool of size n**. Where multiple resources are shared/reused among threads.
-- Have **1 cluster with n pools of size 1**. If you have one cluster with rotating pools to draw a shareable/reusable SMTP connection from. Usefull when you want to spread load around different servers.
+- Have **1 cluster with n pools of size 1**. If you have one cluster with rotating pools to draw a shareable/reusable SMTP connection from. Useful when you want to spread load around different servers.
 - Have **1 cluster with n pools of size n**. Same as above, except with multiple SMTP connections. For example multiple connections to multiple servers. 
 - Have **n clusters ....** Same as all the above except you have dedicated clusters for different purposes. For example a cluster for handling internal mails and a cluster for outgoing mails. 
 
@@ -53,7 +53,7 @@ The next solution satisfies most performance needs by far: having 1 cluster with
 connections to your mail server. If your server can handle it, you really scale up on performance. Try benchmarking your server with test emails with different pool sizes to see when performance 
 starts to degrade. 
 
-#### Take on the worls with a cluster of mail servers
+#### Take on the world with a cluster of mail servers
 
 Finally, the next solution satisfies if you really need to send *a lot* of emails in a reasonable time. Define a cluster of several mail servers to which you can have one or multiple concurrent 
 connections. You rarely need this kind of performance, but sending news letters or world wide updates become can benefit greatly from this.
@@ -97,7 +97,7 @@ smtpClusterConfig.getConfigBuilder()
         // default is never-expire, this one closes connections randomly between 5 to 10 seconds after last use
         .defaultExpirationPolicy(new SpreadedTimeoutSinceLastAllocationExpirationPolicy<Transport>(5, 10, SECONDS)) 
         .cyclingStrategy(new RandomAccessCyclingStrategy()) // default is round-robin
-        .claimTimeout(new Timeout(30, SECONDS)); // wait for available connection until max 30 seconds, default is indefinately
+        .claimTimeout(new Timeout(30, SECONDS)); // wait for available connection until max 30 seconds, default is indefinitely
         
 SmtpConnectionPoolClustered pool = new SmtpConnectionPoolClustered(smtpClusterConfig);
 ```

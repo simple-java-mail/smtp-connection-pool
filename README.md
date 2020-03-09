@@ -77,9 +77,9 @@ connections. You rarely need this kind of performance, but sending news letters 
 // where the connections remain open until the pool is shut down.
 SmtpConnectionPool pool = new SmtpConnectionPool(new SmtpClusterConfig());
 
-PoolableObject<Transport> pollableTransport = pool.claimResourceFromCluster(session);
+PoolableObject<Transport> poolableTransport = pool.claimResourceFromCluster(session);
 // ... send the email
-pollableTransport.release(); // make available in the connection pool again
+poolableTransport.release(); // make available in the connection pool again
 ```
 The pool looks like a cluster and you still claim connections from a cluster, but for each server (backed by a Session) a new cluster is defined under the hood so effectively nothing is
  clustered.

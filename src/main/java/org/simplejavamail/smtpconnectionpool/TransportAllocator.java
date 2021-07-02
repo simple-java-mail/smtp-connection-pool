@@ -32,9 +32,9 @@ class TransportAllocator extends Allocator<Transport> {
 			transport.connect();
 			return transport;
 		} catch (NoSuchProviderException e) {
-			throw new TransportHandlingException("unable to get transport from session:\n\t" + session, e);
+			throw new TransportHandlingException("unable to get transport from session:\n\t" + session.getProperties(), e);
 		} catch (MessagingException e) {
-			throw new TransportHandlingException("Error when trying to open connection to the server, session:\n\t" + session, e);
+			throw new TransportHandlingException("Error when trying to open connection to the server, session:\n\t" + session.getProperties(), e);
 		}
 	}
 	

@@ -1,14 +1,13 @@
 package org.simplejavamail.smtpconnectionpool;
 
+import jakarta.mail.Session;
+import jakarta.mail.Transport;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
 import org.bbottema.clusteredobjectpool.core.ClusterConfig;
 import org.bbottema.clusteredobjectpool.core.ClusterConfig.ClusterConfigBuilder;
 import org.bbottema.genericobjectpool.expirypolicies.TimeoutSinceLastAllocationExpirationPolicy;
-
-import javax.mail.Session;
-import javax.mail.Transport;
 
 import static java.util.concurrent.TimeUnit.SECONDS;
 

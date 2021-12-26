@@ -1,5 +1,6 @@
 package org.simplejavamail.smtpconnectionpool;
 
+import jakarta.mail.Transport;
 import org.bbottema.clusteredobjectpool.core.api.ResourceKey.ResourceClusterAndPoolKey;
 import org.bbottema.genericobjectpool.PoolableObject;
 import org.junit.Test;
@@ -7,14 +8,13 @@ import org.junit.runner.RunWith;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
-import javax.mail.Transport;
 import java.util.UUID;
 
 import static java.util.Objects.requireNonNull;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @RunWith(PowerMockRunner.class)
-@PrepareForTest(javax.mail.Session.class)
+@PrepareForTest(jakarta.mail.Session.class)
 @SuppressWarnings("SameParameterValue")
 public class SmtpConnectionPoolClusteredTest extends SmtpConnectionPoolTestBase<SmtpConnectionPoolClustered, UUID> {
 	

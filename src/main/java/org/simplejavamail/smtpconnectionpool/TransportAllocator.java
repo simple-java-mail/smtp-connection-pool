@@ -1,14 +1,13 @@
 package org.simplejavamail.smtpconnectionpool;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import jakarta.mail.MessagingException;
+import jakarta.mail.NoSuchProviderException;
+import jakarta.mail.Session;
+import jakarta.mail.Transport;
 import org.bbottema.genericobjectpool.Allocator;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
-
-import javax.mail.MessagingException;
-import javax.mail.NoSuchProviderException;
-import javax.mail.Session;
-import javax.mail.Transport;
 
 import static org.slf4j.LoggerFactory.getLogger;
 

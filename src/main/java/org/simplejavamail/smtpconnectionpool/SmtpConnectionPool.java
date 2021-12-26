@@ -1,9 +1,8 @@
 package org.simplejavamail.smtpconnectionpool;
 
+import jakarta.mail.Session;
+import jakarta.mail.Transport;
 import org.bbottema.clusteredobjectpool.core.ResourceClusters;
-
-import javax.mail.Session;
-import javax.mail.Transport;
 
 public class SmtpConnectionPool extends ResourceClusters<Session, Session, Transport> {
     public SmtpConnectionPool(final SmtpClusterConfig smtpClusterConfig) {

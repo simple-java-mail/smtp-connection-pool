@@ -6,7 +6,7 @@
 	<parent>
 		<groupId>com.github.bbottema</groupId>
 		<artifactId>standard-project-parent</artifactId>
-		<version>1.0.3</version>
+		<version>1.0.24</version>
 	</parent>
 
 	<groupId>org.simplejavamail</groupId>
@@ -18,6 +18,11 @@
 		connection lifecycle management, eager/lazy loading pool with auto-expiry policy support</description>
 	<url>https://github.com/simple-java-mail/smtp-connection-pool</url>
 	<inceptionYear>2019</inceptionYear>
+
+	<properties>
+		<license.owner.name>Benny Bottema</license.owner.name>
+		<license.owner.email>benny@bennybottema.com</license.owner.email>
+	</properties>
 
 	<scm>
 		<connection>scm:git:git://github.com/simple-java-mail/smtp-connection-pool.git</connection>

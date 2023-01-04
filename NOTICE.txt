@@ -2,10 +2,10 @@
   ==  NOTICE file for use with the Apache License, Version 2.0           ==
   =========================================================================
   
-  Cluster Stormpot, copyright 2019-2020 Benny Bottema
+  SMTP Connection Pool, copyright 2019-2020 Benny Bottema
   
   This product uses no commercial products.
   
   This product uses the following external (Open Source) libraries in the deployed code:
 
-    - Cluster Stormpot (https://github.com/bbottema/cluster-stormpot)
+    - Clustered Object Pool (https://github.com/bbottema/clustered-object-pool)

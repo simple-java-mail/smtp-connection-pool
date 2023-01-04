@@ -4,6 +4,11 @@ https://github.com/bbottema/smtp-connection-pool
 RELEASE NOTES SMTP Connection Pool
 
 
+v2.1.0 (04 January 2023)
+
+- Added OAuth2 support (you still need to add your own OAuth2 security provider though, Simple Java Mail will use Google's reference implementation from https://github.com/google/gmail-oauth2-tools)
+
+
 v2.0.2 (27 March 2022)
 
 - Updated clustered-object-pool which solves a memory leak when 3rd party deallocation fails with an error

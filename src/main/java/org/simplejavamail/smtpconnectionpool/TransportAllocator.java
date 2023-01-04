@@ -15,6 +15,8 @@ class TransportAllocator extends Allocator<Transport> {
 
 	private static final Logger LOGGER = getLogger(TransportAllocator.class);
 
+	private static final String OAUTH2_TOKEN_PROPERTY = "mail.imaps.sasl.mechanisms.oauth2.oauthToken";
+
 	@NotNull private final Session session;
 
 	TransportAllocator(@NotNull final Session session) {
@@ -28,7 +30,7 @@ class TransportAllocator extends Allocator<Transport> {
 		LOGGER.trace("opening transport connection...");
 		try {
 			Transport transport = session.getTransport();
-			transport.connect();
+			connectTransport(transport, session);
 			return transport;
 		} catch (NoSuchProviderException e) {
 			throw new TransportHandlingException("unable to get transport from session:\n\t" + session.getProperties(), e);
@@ -36,7 +38,20 @@ class TransportAllocator extends Allocator<Transport> {
 			throw new TransportHandlingException("Error when trying to open connection to the server, session:\n\t" + session.getProperties(), e);
 		}
 	}
-	
+
+	private static void connectTransport(Transport transport, Session session) throws MessagingException {
+		if (!session.getProperties().containsKey(OAUTH2_TOKEN_PROPERTY)) {
+			transport.connect();
+		} else {
+			/*
+			 * To connect using OAuth2 authentication, we need to connect slightly differently as we can't use only Session properties and the traditional Authenticator class for
+			 * providing password. Instead, <em>mail.smtp.auth</em> is set to {@code false} and the OAuth2 authenticator should take over, but this is only triggered succesfully if we
+			 * provide an empty non-null password, which is only possible using the alternative {@link Transport#connect(String, String)}.
+			 */
+			transport.connect(session.getProperties().getProperty("mail.smtp.user"), "");
+		}
+	}
+
 	@Override
 	public void deallocate(Transport transport) {
 		LOGGER.trace("closing transport...");

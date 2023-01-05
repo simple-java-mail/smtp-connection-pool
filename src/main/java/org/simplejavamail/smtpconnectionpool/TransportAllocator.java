@@ -5,17 +5,17 @@ import jakarta.mail.MessagingException;
 import jakarta.mail.NoSuchProviderException;
 import jakarta.mail.Session;
 import jakarta.mail.Transport;
+import lombok.val;
 import org.bbottema.genericobjectpool.Allocator;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 
+import static org.simplejavamail.smtpconnectionpool.SmtpConnectionPool.OAUTH2_TOKEN_PROPERTY;
 import static org.slf4j.LoggerFactory.getLogger;
 
 class TransportAllocator extends Allocator<Transport> {
 
 	private static final Logger LOGGER = getLogger(TransportAllocator.class);
-
-	private static final String OAUTH2_TOKEN_PROPERTY = "mail.imaps.sasl.mechanisms.oauth2.oauthToken";
 
 	@NotNull private final Session session;
 
@@ -40,15 +40,16 @@ class TransportAllocator extends Allocator<Transport> {
 	}
 
 	private static void connectTransport(Transport transport, Session session) throws MessagingException {
-		if (!session.getProperties().containsKey(OAUTH2_TOKEN_PROPERTY)) {
-			transport.connect();
-		} else {
+		val oauth2Token = (String) session.getProperties().getOrDefault(OAUTH2_TOKEN_PROPERTY, null);
+		if (oauth2Token != null) {
 			/*
 			 * To connect using OAuth2 authentication, we need to connect slightly differently as we can't use only Session properties and the traditional Authenticator class for
 			 * providing password. Instead, <em>mail.smtp.auth</em> is set to {@code false} and the OAuth2 authenticator should take over, but this is only triggered succesfully if we
 			 * provide an empty non-null password, which is only possible using the alternative {@link Transport#connect(String, String)}.
 			 */
-			transport.connect(session.getProperties().getProperty("mail.smtp.user"), "");
+			transport.connect(session.getProperties().getProperty("mail.smtp.user"), oauth2Token);
+		} else {
+			transport.connect();
 		}
 	}
 

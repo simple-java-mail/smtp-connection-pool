@@ -11,7 +11,7 @@ connection lifecycle management, eager/lazy loading pool with auto-expiry policy
 This library does *not* take care of creating or sending emails; it just pools (hot) reusable Transport instances using Session
 instances provided by the user.
 
-This SMTP connection pool is used by Simple Java Mail, which offers a complete solutions to creating, converting and sending emails.
+This SMTP connection pool is used by Simple Java Mail, which offers a complete solution to creating, converting and sending emails.
 
 ## about
 

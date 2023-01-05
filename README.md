@@ -120,3 +120,11 @@ pool.registerResourcePool(new ResourceClusterAndPoolKey<>(keyCluster1, sessionSe
     4, // core pool size of eagerly opened and available connections
     10); // max pool size
 ```
+
+##### A note on OAUTH2 tokens
+
+Since acquiring SMTP Transport instances works a little differently when using OAuth2, you need to supply your OAuth2 token in the Session under a predefined property:
+
+```java
+session.getProperties().setProperty(SmtpConnectionPool.OAUTH2_TOKEN_PROPERTY, yourOAuth2Token);
+```

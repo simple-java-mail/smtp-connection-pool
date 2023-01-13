@@ -10,7 +10,7 @@ import org.slf4j.Logger;
 import static org.simplejavamail.smtpconnectionpool.SmtpConnectionPool.OAUTH2_TOKEN_PROPERTY;
 import static org.slf4j.LoggerFactory.getLogger;
 
-class TransportAllocator extends Allocator<Transport> {
+class TransportAllocator extends Allocator<SessionTransport> {
 
 	private static final Logger LOGGER = getLogger(TransportAllocator.class);
 
@@ -23,21 +23,21 @@ class TransportAllocator extends Allocator<Transport> {
 	@NotNull
 	@Override
 	@SuppressFBWarnings(value = "RCN_REDUNDANT_NULLCHECK_WOULD_HAVE_BEEN_A_NPE", justification = "generated code by se.eris Maven plugin")
-	public Transport allocate() {
+	public SessionTransport allocate() {
 		LOGGER.trace("opening transport connection...");
 		try {
 			Transport transport = session.getTransport();
 			connectTransport(transport);
-			return transport;
+			return new SessionTransport(session, transport);
 		} catch (NoSuchProviderException e) {
 			throw new TransportHandlingException("unable to get transport from session:\n\t" + session.getProperties(), e);
 		}
 	}
 
 	@Override
-	public void allocateForReuse(Transport transport) {
-		if (!transport.isConnected()) {
-			connectTransport(transport);
+	public void allocateForReuse(SessionTransport sessionTransport) {
+		if (!sessionTransport.getTransport().isConnected()) {
+			connectTransport(sessionTransport.getTransport());
 		}
 	}
 
@@ -60,10 +60,10 @@ class TransportAllocator extends Allocator<Transport> {
 	}
 
 	@Override
-	public void deallocate(Transport transport) {
+	public void deallocate(SessionTransport sessionTransport) {
 		LOGGER.trace("closing transport...");
 		try {
-			transport.close();
+			sessionTransport.getTransport().close();
 		} catch (MessagingException e) {
 			throw new TransportHandlingException("error closing transport connection", e);
 		}

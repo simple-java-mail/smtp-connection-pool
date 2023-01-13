@@ -4,7 +4,7 @@ import jakarta.mail.Session;
 import jakarta.mail.Transport;
 import org.bbottema.clusteredobjectpool.core.ResourceClusters;
 
-public class SmtpConnectionPool extends ResourceClusters<Session, Session, Transport> {
+public class SmtpConnectionPool extends ResourceClusters<Session, Session, SessionTransport> {
 
     /**
      * When using OAuth2 authentication, there is no default Session property to configure the value, so we'll state

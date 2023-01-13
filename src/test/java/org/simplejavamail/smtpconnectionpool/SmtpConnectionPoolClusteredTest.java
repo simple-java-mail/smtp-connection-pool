@@ -37,8 +37,8 @@ public class SmtpConnectionPoolClusteredTest extends SmtpConnectionPoolTestBase<
 		clusters.registerResourcePool(new ResourceClusterAndPoolKey<>(keyCluster2, createSessionPoolKeyForString("server_D")));
 		
 		// first claim on a few specific servers
-		PoolableObject<Transport> connectionA1 = clusters.claimResourceFromPool(new ResourceClusterAndPoolKey<>(keyCluster1, createSessionPoolKeyForString("server_A")));
-		assertThat(requireNonNull(connectionA1).getAllocatedObject().toString()).isEqualTo("connection_A1");
+		PoolableObject<SessionTransport> connectionA1 = clusters.claimResourceFromPool(new ResourceClusterAndPoolKey<>(keyCluster1, createSessionPoolKeyForString("server_A")));
+		assertThat(requireNonNull(connectionA1).getAllocatedObject().getTransport().toString()).isEqualTo("connection_A1");
 		assertThat(claimAndNoRelease(keyCluster1)).isEqualTo("connection_A2");
 		assertThat(claimAndRelease(keyCluster1)).isEqualTo("connection_A3");
 		

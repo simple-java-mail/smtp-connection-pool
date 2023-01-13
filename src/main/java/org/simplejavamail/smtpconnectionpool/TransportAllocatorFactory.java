@@ -6,10 +6,10 @@ import org.bbottema.clusteredobjectpool.core.api.AllocatorFactory;
 import org.bbottema.genericobjectpool.Allocator;
 import org.jetbrains.annotations.NotNull;
 
-class TransportAllocatorFactory implements AllocatorFactory<Session, Transport> {
+class TransportAllocatorFactory implements AllocatorFactory<Session, SessionTransport> {
 	@Override
 	@NotNull
-	public Allocator<Transport> create(@NotNull final Session session) {
+	public Allocator<SessionTransport> create(@NotNull final Session session) {
 		return new TransportAllocator(session);
 	}
 }

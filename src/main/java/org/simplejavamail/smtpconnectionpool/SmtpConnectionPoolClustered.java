@@ -6,7 +6,7 @@ import org.bbottema.clusteredobjectpool.core.ResourceClusters;
 
 import java.util.UUID;
 
-public class SmtpConnectionPoolClustered extends ResourceClusters<UUID, Session, Transport> {
+public class SmtpConnectionPoolClustered extends ResourceClusters<UUID, Session, SessionTransport> {
     public SmtpConnectionPoolClustered(final SmtpClusterConfig smtpClusterConfig) {
         super(smtpClusterConfig.getConfigBuilder().build());
     }

@@ -1,7 +1,7 @@
 [![APACHE v2 License](https://img.shields.io/badge/license-apachev2-blue.svg?style=flat)](LICENSE-2.0.txt) 
 [![Latest Release](https://img.shields.io/maven-central/v/org.simplejavamail/smtp-connection-pool.svg?style=flat)](http://search.maven.org/#search%7Cgav%7C1%7Cg%3A%22org.simplejavamail%22%20AND%20a%3A%22smtp-connection-pool%22)
 [![Javadocs](http://www.javadoc.io/badge/org.simplejavamail/smtp-connection-pool.svg)](http://www.javadoc.io/doc/org.simplejavamail/smtp-connection-pool)
-[![Codacy](https://img.shields.io/codacy/grade/00571b6adbdb490b8cb18b175034f7b6.svg?style=flat)](https://www.codacy.com/app/b-bottema/smtp-connection-pool)
+[![Codacy](https://img.shields.io/codacy/grade/dd513d3737cd4f82bfbabe01558c4878.svg?style=flat)](https://app.codacy.com/gh/simple-java-mail/smtp-connection-pool)
 
 # smtp-connection-pool
 
@@ -64,7 +64,7 @@ connections. You rarely need this kind of performance, but sending news letters 
 <dependency>
 	<groupId>org.simplejavamail</groupId>
 	<artifactId>smtp-connection-pool</artifactId>
-	<version>2.1.0</version>
+	<version>2.3.0</version>
 </dependency>
 ```
 

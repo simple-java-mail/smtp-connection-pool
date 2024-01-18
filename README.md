@@ -77,7 +77,7 @@ connections. You rarely need this kind of performance, but sending news letters 
 // where the connections remain open until the pool is shut down.
 SmtpConnectionPool pool = new SmtpConnectionPool(new SmtpClusterConfig());
 
-PoolableObject<Transport> poolableTransport = pool.claimResourceFromCluster(session);
+PoolableObject<SessionTransport> poolableTransport = pool.claimResourceFromCluster(session);
 // ... send the email
 poolableTransport.release(); // make available in the connection pool again
 ```

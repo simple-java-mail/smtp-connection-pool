@@ -8,7 +8,7 @@ import org.bbottema.clusteredobjectpool.core.api.ResourceKey.ResourceClusterAndP
 import org.bbottema.genericobjectpool.Allocator;
 import org.bbottema.genericobjectpool.PoolableObject;
 import org.jetbrains.annotations.NotNull;
-import org.junit.Before;
+import org.junit.jupiter.api.BeforeEach;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -24,7 +24,7 @@ abstract class SmtpConnectionPoolTestBase<PoolType extends ResourceClusters<Clus
 	
 	PoolType clusters;
 	
-	@Before
+	@BeforeEach
 	public void setup() {
 		clusters = initClusters();
 	}

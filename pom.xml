@@ -6,7 +6,7 @@
 	<parent>
 		<groupId>com.github.bbottema</groupId>
 		<artifactId>standard-project-parent</artifactId>
-		<version>1.0.24</version>
+		<version>1.0.42</version>
 	</parent>
 
 	<groupId>org.simplejavamail</groupId>
@@ -46,7 +46,7 @@
 		<dependency>
 			<groupId>com.github.bbottema</groupId>
 			<artifactId>clustered-object-pool</artifactId>
-			<version>2.0.2</version>
+			<version>2.0.3</version>
 		</dependency>
 
 		<dependency>
@@ -54,20 +54,6 @@
 			<artifactId>lombok</artifactId>
 			<version>1.18.2</version>
 			<scope>provided</scope>
-		</dependency>
-
-		<!-- testing dependencies-->
-		<dependency>
-			<groupId>org.powermock</groupId>
-			<artifactId>powermock-module-junit4</artifactId>
-			<version>2.0.4</version>
-			<scope>test</scope>
-		</dependency>
-		<dependency>
-			<groupId>org.powermock</groupId>
-			<artifactId>powermock-api-mockito2</artifactId>
-			<version>2.0.4</version>
-			<scope>test</scope>
 		</dependency>
     </dependencies>
 </project>

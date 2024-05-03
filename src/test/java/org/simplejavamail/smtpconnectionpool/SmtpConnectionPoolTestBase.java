@@ -18,7 +18,7 @@ import static java.util.Objects.requireNonNull;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-abstract class SmtpConnectionPoolTestBase<PoolType extends ResourceClusters<ClusterKey, Session, Transport>, ClusterKey> {
+abstract class SmtpConnectionPoolTestBase<PoolType extends ResourceClusters<ClusterKey, Session, SessionTransport>, ClusterKey> {
 	
 	private static final Map<String, Session> poolKeys = new HashMap<>();
 	
@@ -33,15 +33,15 @@ abstract class SmtpConnectionPoolTestBase<PoolType extends ResourceClusters<Clus
 	
 	@SuppressWarnings("SameParameterValue")
 	String claimAndRelease(ClusterKey clusterKey) throws InterruptedException {
-		final PoolableObject<Transport> poolable = clusters.claimResourceFromPool(new ResourceClusterAndPoolKey<>(clusterKey, createSessionPoolKeyForString("server_A")));
+		final PoolableObject<SessionTransport> poolable = clusters.claimResourceFromPool(new ResourceClusterAndPoolKey<>(clusterKey, createSessionPoolKeyForString("server_A")));
 		requireNonNull(poolable).release();
-		return poolable.getAllocatedObject().toString(); // returns the mocked testable string
+		return poolable.getAllocatedObject().getTransport().toString(); // returns the mocked testable string
 	}
 	
 	@SuppressWarnings("SameParameterValue")
 	String claimAndNoRelease(ClusterKey clusterKey) throws InterruptedException {
 		ResourceClusterAndPoolKey<ClusterKey, Session> resourceKey = new ResourceClusterAndPoolKey<>(clusterKey, createSessionPoolKeyForString("server_A"));
-		return requireNonNull(clusters.claimResourceFromPool(resourceKey)).getAllocatedObject().toString();
+		return requireNonNull(clusters.claimResourceFromPool(resourceKey)).getAllocatedObject().getTransport().toString();
 	}
 	
 	@NotNull
@@ -56,24 +56,24 @@ abstract class SmtpConnectionPoolTestBase<PoolType extends ResourceClusters<Clus
 	
 	@SuppressWarnings("SameParameterValue")
 	String claimAndReleaseResource(ClusterKey clusterKey) throws InterruptedException {
-		PoolableObject<Transport> poolable = clusters.claimResourceFromCluster(clusterKey);
+		PoolableObject<SessionTransport> poolable = clusters.claimResourceFromCluster(clusterKey);
 		requireNonNull(poolable).release();
-		return poolable.getAllocatedObject().toString();
+		return poolable.getAllocatedObject().getTransport().toString();
 	}
 	
 	String claimAndNoReleaseResource(ClusterKey clusterKey) throws InterruptedException {
-		return requireNonNull(clusters.claimResourceFromCluster(clusterKey)).getAllocatedObject().toString();
+		return requireNonNull(clusters.claimResourceFromCluster(clusterKey)).getAllocatedObject().getTransport().toString();
 	}
 	
-	static class DummyAllocatorFactory implements AllocatorFactory<Session, Transport> {
+	static class DummyAllocatorFactory implements AllocatorFactory<Session, SessionTransport> {
 		@NotNull
 		@Override
-		public Allocator<Transport> create(@NotNull Session serverInfo) {
+		public Allocator<SessionTransport> create(@NotNull Session serverInfo) {
 			return new DummyAllocator(serverInfo);
 		}
 	}
 	
-	private static class DummyAllocator extends Allocator<Transport> {
+	private static class DummyAllocator extends Allocator<SessionTransport> {
 		private final String serverInfo;
 		private int counter = 0;
 		
@@ -83,14 +83,14 @@ abstract class SmtpConnectionPoolTestBase<PoolType extends ResourceClusters<Clus
 		
 		@NotNull
 		@Override
-		public Transport allocate() {
-			final Transport s = mock(Transport.class);
-			when(s.toString()).thenReturn(format("connection%s%d", serverInfo.substring(serverInfo.indexOf('_')), ++counter));
-			return s;
+		public SessionTransport allocate() {
+			final Transport transport = mock(Transport.class);
+			when(transport.toString()).thenReturn(format("connection%s%d", serverInfo.substring(serverInfo.indexOf('_')), ++counter));
+			return new SessionTransport(mock(Session.class), transport);
 		}
 		
 		@Override
-		public void deallocate(Transport transport) {
+		public void deallocate(SessionTransport transport) {
 		
 		}
 	}

@@ -1,7 +1,7 @@
 [![APACHE v2 License](https://img.shields.io/badge/license-apachev2-blue.svg?style=flat)](LICENSE-2.0.txt) 
 [![Latest Release](https://img.shields.io/maven-central/v/org.simplejavamail/smtp-connection-pool.svg?style=flat)](http://search.maven.org/#search%7Cgav%7C1%7Cg%3A%22org.simplejavamail%22%20AND%20a%3A%22smtp-connection-pool%22)
 [![Javadocs](http://www.javadoc.io/badge/org.simplejavamail/smtp-connection-pool.svg)](http://www.javadoc.io/doc/org.simplejavamail/smtp-connection-pool)
-[![Codacy](https://img.shields.io/codacy/grade/00571b6adbdb490b8cb18b175034f7b6.svg?style=flat)](https://www.codacy.com/app/b-bottema/smtp-connection-pool)
+[![Codacy](https://img.shields.io/codacy/grade/dd513d3737cd4f82bfbabe01558c4878.svg?style=flat)](https://app.codacy.com/gh/simple-java-mail/smtp-connection-pool)
 
 # smtp-connection-pool
 
@@ -11,7 +11,7 @@ connection lifecycle management, eager/lazy loading pool with auto-expiry policy
 This library does *not* take care of creating or sending emails; it just pools (hot) reusable Transport instances using Session
 instances provided by the user.
 
-This SMTP connection pool is used by Simple Java Mail, which offers a complete solutions to creating, converting and sending emails.
+This SMTP connection pool is used by Simple Java Mail, which offers a complete solution to creating, converting and sending emails.
 
 ## about
 
@@ -64,7 +64,7 @@ connections. You rarely need this kind of performance, but sending news letters 
 <dependency>
 	<groupId>org.simplejavamail</groupId>
 	<artifactId>smtp-connection-pool</artifactId>
-	<version>2.0.2</version>
+	<version>2.3.0</version>
 </dependency>
 ```
 
@@ -77,7 +77,7 @@ connections. You rarely need this kind of performance, but sending news letters 
 // where the connections remain open until the pool is shut down.
 SmtpConnectionPool pool = new SmtpConnectionPool(new SmtpClusterConfig());
 
-PoolableObject<Transport> poolableTransport = pool.claimResourceFromCluster(session);
+PoolableObject<SessionTransport> poolableTransport = pool.claimResourceFromCluster(session);
 // ... send the email
 poolableTransport.release(); // make available in the connection pool again
 ```
@@ -119,4 +119,12 @@ pool.registerResourcePool(new ResourceClusterAndPoolKey<>(keyCluster1, sessionSe
     new TimeoutSinceCreationExpirationPolicy<Transport>(30, SECONDS),
     4, // core pool size of eagerly opened and available connections
     10); // max pool size
+```
+
+##### A note on OAUTH2 tokens
+
+Since acquiring SMTP Transport instances works a little differently when using OAuth2, you need to supply your OAuth2 token in the Session under a predefined property:
+
+```java
+session.getProperties().setProperty(SmtpConnectionPool.OAUTH2_TOKEN_PROPERTY, yourOAuth2Token);
 ```

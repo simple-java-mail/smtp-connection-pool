@@ -32,9 +32,9 @@ public final class SmtpClusterConfig {
     static final int MAX_POOL_SIZE = 4;
     static final int EXPIRY_POLICY_SECONDS = 10;
 
-    private final ClusterConfigBuilder<Session, Transport> configBuilder = ClusterConfig.<Session, Transport>builder()
+    private final ClusterConfigBuilder<Session, SessionTransport> configBuilder = ClusterConfig.<Session, SessionTransport>builder()
             .allocatorFactory(new TransportAllocatorFactory())
-            .defaultExpirationPolicy(new TimeoutSinceLastAllocationExpirationPolicy<Transport>(EXPIRY_POLICY_SECONDS, SECONDS))
+            .defaultExpirationPolicy(new TimeoutSinceLastAllocationExpirationPolicy<>(EXPIRY_POLICY_SECONDS, SECONDS))
             .defaultCorePoolSize(CORE_POOL_SIZE)
             .defaultMaxPoolSize(MAX_POOL_SIZE);
 }

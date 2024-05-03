@@ -1,7 +1,23 @@
-https://github.com/bbottema/smtp-connection-pool
+https://github.com/simple-java-mail/smtp-connection-pool
 
 
 RELEASE NOTES SMTP Connection Pool
+
+
+v2.3.0 (17 January 2024)
+
+- #3: Update to latest Jakarta+Angus dependencies
+
+
+v2.2.0 (xx January 2023)
+
+- Expose Session instance that was used to produce Transport instances
+
+
+v2.1.0-2.1.2 (04 January 2023)
+
+- 05 January 2023: Added auto-reconnects for Transport instance that are claimed for imminent reuse
+- 04 January 2023: Added OAuth2 support (you still need to add your own OAuth2 security provider though, Simple Java Mail will use Google's reference implementation from https://github.com/google/gmail-oauth2-tools)
 
 
 v2.0.2 (27 March 2022)

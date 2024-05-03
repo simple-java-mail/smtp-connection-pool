@@ -1,17 +1,16 @@
 package org.simplejavamail.smtpconnectionpool;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
-import jakarta.mail.MessagingException;
-import jakarta.mail.NoSuchProviderException;
-import jakarta.mail.Session;
-import jakarta.mail.Transport;
+import jakarta.mail.*;
+import lombok.val;
 import org.bbottema.genericobjectpool.Allocator;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 
+import static org.simplejavamail.smtpconnectionpool.SmtpConnectionPool.OAUTH2_TOKEN_PROPERTY;
 import static org.slf4j.LoggerFactory.getLogger;
 
-class TransportAllocator extends Allocator<Transport> {
+class TransportAllocator extends Allocator<SessionTransport> {
 
 	private static final Logger LOGGER = getLogger(TransportAllocator.class);
 
@@ -24,24 +23,47 @@ class TransportAllocator extends Allocator<Transport> {
 	@NotNull
 	@Override
 	@SuppressFBWarnings(value = "RCN_REDUNDANT_NULLCHECK_WOULD_HAVE_BEEN_A_NPE", justification = "generated code by se.eris Maven plugin")
-	public Transport allocate() {
+	public SessionTransport allocate() {
 		LOGGER.trace("opening transport connection...");
 		try {
 			Transport transport = session.getTransport();
-			transport.connect();
-			return transport;
+			connectTransport(transport);
+			return new SessionTransport(session, transport);
 		} catch (NoSuchProviderException e) {
 			throw new TransportHandlingException("unable to get transport from session:\n\t" + session.getProperties(), e);
+		}
+	}
+
+	@Override
+	public void allocateForReuse(SessionTransport sessionTransport) {
+		if (!sessionTransport.getTransport().isConnected()) {
+			connectTransport(sessionTransport.getTransport());
+		}
+	}
+
+	private void connectTransport(Transport transport) {
+		try {
+			val oauth2Token = (String) session.getProperties().getOrDefault(OAUTH2_TOKEN_PROPERTY, null);
+			if (oauth2Token != null) {
+				/*
+				 * To connect using OAuth2 authentication, we need to connect slightly differently as we can't use only Session properties and the traditional Authenticator class for
+				 * providing password. Instead, <em>mail.smtp.auth</em> is set to {@code false} and the OAuth2 authenticator should take over, but this is only triggered succesfully if we
+				 * provide an empty non-null password, which is only possible using the alternative {@link Transport#connect(String, String)}.
+				 */
+				transport.connect(session.getProperties().getProperty("mail.smtp.user"), oauth2Token);
+			} else {
+				transport.connect();
+			}
 		} catch (MessagingException e) {
 			throw new TransportHandlingException("Error when trying to open connection to the server, session:\n\t" + session.getProperties(), e);
 		}
 	}
-	
+
 	@Override
-	public void deallocate(Transport transport) {
+	public void deallocate(SessionTransport sessionTransport) {
 		LOGGER.trace("closing transport...");
 		try {
-			transport.close();
+			sessionTransport.getTransport().close();
 		} catch (MessagingException e) {
 			throw new TransportHandlingException("error closing transport connection", e);
 		}

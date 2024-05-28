@@ -4,8 +4,9 @@ https://github.com/simple-java-mail/smtp-connection-pool
 RELEASE NOTES SMTP Connection Pool
 
 
-v2.3.0-2.3.2 (03 May 2024)
+v2.3.0-2.3.3
 
+- 2.3.3: 28 May 2024: Updated clustered-object-pool from 2.0.3 to 2.1.0, which improves performance and solves rare ConcurrentModificationException
 - 2.3.2: 04 May 2024: Updated jakarta.mail-api from 2.1.2 to 2.1.3
 - 2.3.1: 03 May 2024: Upgraded clustered-object-pool which fixed a bug where exceptions during allocation would cause further issues
 - 2.3.0: 17 January 2024: #3: Update to latest Jakarta+Angus dependencies

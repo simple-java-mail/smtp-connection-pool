@@ -65,7 +65,7 @@ class TransportAllocator extends Allocator<SessionTransport> {
 		try {
 			sessionTransport.getTransport().close();
 		} catch (MessagingException e) {
-			throw new TransportHandlingException("error closing transport connection", e);
+			LOGGER.debug("Ignoring failure while closing SMTP transport; connection was already unusable.", e);
 		}
 	}
 }

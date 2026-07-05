@@ -4,6 +4,7 @@ import jakarta.mail.Session;
 import jakarta.mail.Transport;
 import org.bbottema.clusteredobjectpool.core.ResourceClusters;
 import org.bbottema.clusteredobjectpool.core.api.AllocatorFactory;
+import org.bbottema.clusteredobjectpool.core.api.ResourceKey;
 import org.bbottema.clusteredobjectpool.core.api.ResourceKey.ResourceClusterAndPoolKey;
 import org.bbottema.genericobjectpool.Allocator;
 import org.bbottema.genericobjectpool.PoolableObject;
@@ -65,11 +66,11 @@ abstract class SmtpConnectionPoolTestBase<PoolType extends ResourceClusters<Clus
 		return requireNonNull(clusters.claimResourceFromCluster(clusterKey)).getAllocatedObject().getTransport().toString();
 	}
 	
-	static class DummyAllocatorFactory implements AllocatorFactory<Session, SessionTransport> {
+	static class DummyAllocatorFactory<ClusterKey> implements AllocatorFactory<ClusterKey, Session, SessionTransport> {
 		@NotNull
 		@Override
-		public Allocator<SessionTransport> create(@NotNull Session serverInfo) {
-			return new DummyAllocator(serverInfo);
+		public Allocator<SessionTransport> create(@NotNull ResourceKey<ClusterKey, Session> resourceKey) {
+			return new DummyAllocator(resourceKey.getPoolKey());
 		}
 	}
 	

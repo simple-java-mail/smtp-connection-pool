@@ -64,7 +64,7 @@ connections. You rarely need this kind of performance, but sending news letters 
 <dependency>
 	<groupId>org.simplejavamail</groupId>
 	<artifactId>smtp-connection-pool</artifactId>
-	<version>2.3.4</version>
+	<version>3.0.0</version>
 </dependency>
 ```
 
@@ -75,7 +75,7 @@ connections. You rarely need this kind of performance, but sending news letters 
 ```java
 // Simple on-demand (lazy loading) connection pool with default size of 4, 
 // where the connections remain open until the pool is shut down.
-SmtpConnectionPool pool = new SmtpConnectionPool(new SmtpClusterConfig());
+SmtpConnectionPool pool = new SmtpConnectionPool(new SmtpClusterConfig<Session>());
 
 PoolableObject<SessionTransport> poolableTransport = pool.claimResourceFromCluster(session);
 // ... send the email
@@ -89,7 +89,7 @@ The pool looks like a cluster and you still claim connections from a cluster, bu
 Let's see what options we have:
 
 ```java
-SmtpClusterConfig smtpClusterConfig = new SmtpClusterConfig();
+SmtpClusterConfig<UUID> smtpClusterConfig = new SmtpClusterConfig<>();
 smtpClusterConfig.getConfigBuilder()
         .allocatorFactory(new MyCustomTransportAllocatorFactory())
         .defaultCorePoolSize(10) // eagerly start making up to 10 SMTP connections
@@ -99,10 +99,10 @@ smtpClusterConfig.getConfigBuilder()
         .cyclingStrategy(new RandomAccessCyclingStrategy()) // default is round-robin
         .claimTimeout(new Timeout(30, SECONDS)); // wait for available connection until max 30 seconds, default is indefinitely
         
-SmtpConnectionPoolClustered pool = new SmtpConnectionPoolClustered(smtpClusterConfig);
+SmtpConnectionPoolClustered<UUID> pool = new SmtpConnectionPoolClustered<>(smtpClusterConfig);
 ```
 
-New clusters and pools are created on-demand with the global defaults, based on cluster keys (for example a UUID) and pool keys (Session instances) passed to the claim invocations. You can however... 
+New clusters and pools are created on-demand with the global defaults, based on cluster keys (for example a UUID, local bind address or routing group) and pool keys (Session instances) passed to the claim invocations. You can however...
 
 #### Configure different behavior for specific clusters and pools (servers)
 

@@ -1,7 +1,6 @@
 package org.simplejavamail.smtpconnectionpool;
 
 import jakarta.mail.Session;
-import jakarta.mail.Transport;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
@@ -26,14 +25,14 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 @ToString
 @NoArgsConstructor
 @SuppressWarnings("WeakerAccess")
-public final class SmtpClusterConfig {
+public final class SmtpClusterConfig<ClusterKey> {
     
     static final int CORE_POOL_SIZE = 0;
     static final int MAX_POOL_SIZE = 4;
     static final int EXPIRY_POLICY_SECONDS = 10;
 
-    private final ClusterConfigBuilder<Session, SessionTransport> configBuilder = ClusterConfig.<Session, SessionTransport>builder()
-            .allocatorFactory(new TransportAllocatorFactory())
+    private final ClusterConfigBuilder<ClusterKey, Session, SessionTransport> configBuilder = ClusterConfig.<ClusterKey, Session, SessionTransport>builder()
+            .allocatorFactory(new TransportAllocatorFactory<ClusterKey>())
             .defaultExpirationPolicy(new TimeoutSinceLastAllocationExpirationPolicy<>(EXPIRY_POLICY_SECONDS, SECONDS))
             .defaultCorePoolSize(CORE_POOL_SIZE)
             .defaultMaxPoolSize(MAX_POOL_SIZE);

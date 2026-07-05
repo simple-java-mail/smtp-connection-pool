@@ -10,17 +10,17 @@ import java.util.UUID;
 import static java.util.Objects.requireNonNull;
 import static org.assertj.core.api.Assertions.assertThat;
 
-public class SmtpConnectionPoolClusteredTest extends SmtpConnectionPoolTestBase<SmtpConnectionPoolClustered, UUID> {
+public class SmtpConnectionPoolClusteredTest extends SmtpConnectionPoolTestBase<SmtpConnectionPoolClustered<UUID>, UUID> {
 
 	private static final UUID keyCluster1 = UUID.randomUUID();
 	private static final UUID keyCluster2 = UUID.randomUUID();
 
-	public SmtpConnectionPoolClustered initClusters() {
-		SmtpClusterConfig smtpClusterConfig = new SmtpClusterConfig();
+	public SmtpConnectionPoolClustered<UUID> initClusters() {
+		SmtpClusterConfig<UUID> smtpClusterConfig = new SmtpClusterConfig<>();
 		smtpClusterConfig.getConfigBuilder()
-				.allocatorFactory(new DummyAllocatorFactory())
+				.allocatorFactory(new DummyAllocatorFactory<UUID>())
 				.defaultCorePoolSize(SmtpClusterConfig.MAX_POOL_SIZE);
-		return new SmtpConnectionPoolClustered(smtpClusterConfig);
+		return new SmtpConnectionPoolClustered<>(smtpClusterConfig);
 	}
 
 	@Test
@@ -56,5 +56,21 @@ public class SmtpConnectionPoolClusteredTest extends SmtpConnectionPoolTestBase<
 		assertThat(claimAndNoReleaseResource(keyCluster2)).isEqualTo("connection_C3");
 		assertThat(claimAndNoReleaseResource(keyCluster2)).isEqualTo("connection_D3");
 		assertThat(claimAndNoReleaseResource(keyCluster2)).isEqualTo("connection_C4");
+	}
+
+	@Test
+	public void testClusterKeyCanUseCustomDomainType() throws InterruptedException {
+		final SmtpClusterConfig<String> smtpClusterConfig = new SmtpClusterConfig<>();
+		smtpClusterConfig.getConfigBuilder()
+				.allocatorFactory(new DummyAllocatorFactory<String>())
+				.defaultCorePoolSize(1);
+		final SmtpConnectionPoolClustered<String> pool = new SmtpConnectionPoolClustered<>(smtpClusterConfig);
+		final String localBindAddress = "192.0.2.10";
+
+		final PoolableObject<SessionTransport> poolable = pool.claimResourceFromPool(
+				new ResourceClusterAndPoolKey<>(localBindAddress, createSessionPoolKeyForString("server_A")));
+
+		assertThat(requireNonNull(poolable).getAllocatedObject().getTransport().toString()).isEqualTo("connection_A1");
+		poolable.release();
 	}
 }

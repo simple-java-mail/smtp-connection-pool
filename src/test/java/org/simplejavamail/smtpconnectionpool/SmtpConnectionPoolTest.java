@@ -7,9 +7,9 @@ import org.junit.jupiter.api.Test;
 public class SmtpConnectionPoolTest extends SmtpConnectionPoolTestBase<SmtpConnectionPool, Session> {
 
 	public SmtpConnectionPool initClusters() {
-		SmtpClusterConfig smtpClusterConfig = new SmtpClusterConfig();
+		SmtpClusterConfig<Session> smtpClusterConfig = new SmtpClusterConfig<>();
 		smtpClusterConfig.getConfigBuilder()
-				.allocatorFactory(new DummyAllocatorFactory())
+				.allocatorFactory(new DummyAllocatorFactory<Session>())
 				.defaultCorePoolSize(SmtpClusterConfig.MAX_POOL_SIZE);
 		return new SmtpConnectionPool(smtpClusterConfig);
 	}

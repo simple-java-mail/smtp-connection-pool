@@ -12,7 +12,7 @@ public class SmtpConnectionPool extends ResourceClusters<Session, Session, Sessi
      */
     public static final String OAUTH2_TOKEN_PROPERTY = "smtp.connection.pool.transport.allocator.oauth2token";
 
-    public SmtpConnectionPool(final SmtpClusterConfig smtpClusterConfig) {
+    public SmtpConnectionPool(final SmtpClusterConfig<Session> smtpClusterConfig) {
         super(smtpClusterConfig.getConfigBuilder().build());
     }
 }

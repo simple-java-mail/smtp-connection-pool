@@ -64,9 +64,15 @@ connections. You rarely need this kind of performance, but sending news letters 
 <dependency>
 	<groupId>org.simplejavamail</groupId>
 	<artifactId>smtp-connection-pool</artifactId>
-	<version>3.0.0</version>
+	<version>3.0.1</version>
 </dependency>
 ```
+
+## Release Notes
+
+Unreleased 3.0.1
+
+- [#8](https://github.com/simple-java-mail/smtp-connection-pool/issues/8): Updated `clustered-object-pool` to 4.0.1 so clustered SMTP pools can use cluster-specific defaults.
 
 ## Usage
 
@@ -119,6 +125,16 @@ pool.registerResourcePool(new ResourceClusterAndPoolKey<>(keyCluster1, sessionSe
     new TimeoutSinceCreationExpirationPolicy<Transport>(30, SECONDS),
     4, // core pool size of eagerly opened and available connections
     10); // max pool size
+
+// or define different defaults for an entire cluster
+SmtpClusterConfig<UUID> constrainedCluster = new SmtpClusterConfig<>();
+constrainedCluster.getConfigBuilder()
+    .defaultCorePoolSize(0)
+    .defaultMaxPoolSize(1)
+    .claimTimeout(new Timeout(30, SECONDS));
+
+pool.registerResourceCluster(keyCluster2, constrainedCluster.getConfigBuilder().build());
+pool.registerResourcePool(new ResourceClusterAndPoolKey<>(keyCluster2, sessionServerB));
 ```
 
 ##### A note on OAUTH2 tokens

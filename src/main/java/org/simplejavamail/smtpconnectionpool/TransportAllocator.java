@@ -7,7 +7,10 @@ import org.bbottema.genericobjectpool.Allocator;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 
+import java.util.function.Supplier;
+
 import static org.simplejavamail.smtpconnectionpool.SmtpConnectionPool.OAUTH2_TOKEN_PROPERTY;
+import static org.simplejavamail.smtpconnectionpool.SmtpConnectionPool.OAUTH2_TOKEN_PROVIDER_PROPERTY;
 import static org.slf4j.LoggerFactory.getLogger;
 
 class TransportAllocator extends Allocator<SessionTransport> {
@@ -30,7 +33,7 @@ class TransportAllocator extends Allocator<SessionTransport> {
 			connectTransport(transport);
 			return new SessionTransport(session, transport);
 		} catch (NoSuchProviderException e) {
-			throw new TransportHandlingException("unable to get transport from session:\n\t" + session.getProperties(), e);
+			throw new TransportHandlingException("Unable to obtain an SMTP transport from the configured Session", e);
 		}
 	}
 
@@ -43,7 +46,7 @@ class TransportAllocator extends Allocator<SessionTransport> {
 
 	private void connectTransport(Transport transport) {
 		try {
-			val oauth2Token = (String) session.getProperties().getOrDefault(OAUTH2_TOKEN_PROPERTY, null);
+			val oauth2Token = resolveOAuth2Token();
 			if (oauth2Token != null) {
 				/*
 				 * To connect using OAuth2 authentication, we need to connect slightly differently as we can't use only Session properties and the traditional Authenticator class for
@@ -55,8 +58,30 @@ class TransportAllocator extends Allocator<SessionTransport> {
 				transport.connect();
 			}
 		} catch (MessagingException e) {
-			throw new TransportHandlingException("Error when trying to open connection to the server, session:\n\t" + session.getProperties(), e);
+			throw new TransportHandlingException("Error while opening the configured SMTP transport", e);
 		}
+	}
+
+	private String resolveOAuth2Token() {
+		val properties = session.getProperties();
+		val provider = properties.get(OAUTH2_TOKEN_PROVIDER_PROPERTY);
+		if (provider == null) {
+			return (String) properties.getOrDefault(OAUTH2_TOKEN_PROPERTY, null);
+		}
+		if (!(provider instanceof Supplier)) {
+			throw new TransportHandlingException("The configured OAuth2 token provider is not a Supplier", null);
+		}
+
+		final Object providedToken;
+		try {
+			providedToken = ((Supplier<?>) provider).get();
+		} catch (RuntimeException e) {
+			throw new TransportHandlingException("The OAuth2 token provider failed while obtaining an access token", e);
+		}
+		if (!(providedToken instanceof String) || ((String) providedToken).trim().isEmpty()) {
+			throw new TransportHandlingException("The OAuth2 token provider returned a blank access token", null);
+		}
+		return (String) providedToken;
 	}
 
 	@Override

@@ -4,6 +4,11 @@ https://github.com/simple-java-mail/smtp-connection-pool
 RELEASE NOTES SMTP Connection Pool
 
 
+v3.1.0 (unreleased)
+
+- #9: Resolve a current OAuth2 access token whenever a physical SMTP transport is opened or reconnected, while retaining fixed-token configuration.
+
+
 v2.3.5-v3.0.0 (05-Jul-2026)
 
 - 3.0.0: 05 July 2026: Updated clustered-object-pool to 4.0.0 and made clustered SMTP pools generic over their cluster-key type

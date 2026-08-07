@@ -64,13 +64,17 @@ connections. You rarely need this kind of performance, but sending news letters 
 <dependency>
 	<groupId>org.simplejavamail</groupId>
 	<artifactId>smtp-connection-pool</artifactId>
-	<version>3.0.1</version>
+	<version>3.1.0</version>
 </dependency>
 ```
 
 ## Release Notes
 
-Unreleased 3.0.1
+Unreleased 3.1.0
+
+- [#9](https://github.com/simple-java-mail/smtp-connection-pool/issues/9): Resolve a current OAuth2 access token whenever a physical SMTP transport is opened or reconnected.
+
+3.0.1
 
 - [#8](https://github.com/simple-java-mail/smtp-connection-pool/issues/8): Updated `clustered-object-pool` to 4.0.1 so clustered SMTP pools can use cluster-specific defaults.
 
@@ -139,7 +143,15 @@ pool.registerResourcePool(new ResourceClusterAndPoolKey<>(keyCluster2, sessionSe
 
 ##### A note on OAUTH2 tokens
 
-Since acquiring SMTP Transport instances works a little differently when using OAuth2, you need to supply your OAuth2 token in the Session under a predefined property:
+For a reusable pool, provide a thread-safe supplier that returns a current access token. The supplier is invoked when a physical transport is opened or reconnected, not when an already-connected transport is reused:
+
+```java
+session.getProperties().put(
+    SmtpConnectionPool.OAUTH2_TOKEN_PROVIDER_PROPERTY,
+    (Supplier<String>) tokenProvider::getAccessToken);
+```
+
+The supplier owns token caching and refresh. A fixed access token remains available for short-lived use:
 
 ```java
 session.getProperties().setProperty(SmtpConnectionPool.OAUTH2_TOKEN_PROPERTY, yourOAuth2Token);

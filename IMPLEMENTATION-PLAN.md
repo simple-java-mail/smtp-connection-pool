@@ -182,12 +182,12 @@ Follow [RELEASING.md](RELEASING.md). In summary:
 - [x] Verify the local candidate reactor with tests, Javadocs, SpotBugs, binary compatibility, artifact packaging, and the documented examples; repeat on the eventual reviewed release commit.
 - [x] Inspect the combined effective POM and perform a `skipPublishing` deploy-lifecycle rehearsal; the technical parent plus core, provider, Camel, and reactor-only demo outputs install locally with aligned metadata. Central staging remains publication-time verification because `skipPublishing` intentionally stages nothing.
 - [x] During publication rehearsal, inspect the generated Central bundle and prove that it contains the parent plus all three runtime artifacts, but no `smtp-connection-pool-demo` coordinate. The local structural rehearsal skips signing because GPG is supplied by the CircleCI release context; the actual release bundle remains subject to Central's signature validation.
-- [ ] Merge to `master`; let CircleCI own version selection, release commit, and tag creation.
-- [ ] With explicit release approval, approve the **major** deployment lane exactly once.
-- [ ] Verify tag `4.0.0` and all three artifacts in Maven Central.
-- [ ] Publish one self-contained GitHub release titled `v4.0.0` for tag `4.0.0`.
-- [ ] Add a short availability/configuration comment to issue #10 and close it if fully delivered.
-- [ ] Reconcile and close milestone `4.0.0`, replacing its due date with the actual publication date.
+- [x] Merge to `master`; let CircleCI own version selection, release commit, and tag creation.
+- [x] With explicit release approval, approve the **major** deployment lane. The first attempt stopped before publication on a duplicate-workspace attachment; after isolating the Java 8 gate, the clean retry completed through the same major lane.
+- [x] Verify tag `4.0.0` and all three artifacts in Maven Central, including sources, Javadocs, POMs, and signatures; verify that the demo coordinate is absent.
+- [x] Publish one self-contained [GitHub release titled `v4.0.0`](https://github.com/simple-java-mail/smtp-connection-pool/releases/tag/4.0.0) for tag `4.0.0`.
+- [x] Add a short availability/configuration comment to issue #10 and close it as completed.
+- [x] Reconcile and close milestone `4.0.0` with the actual publication date, one closed issue, and no open issues.
 
 ## Phase 7: update Simple Java Mail (downstream follow-up)
 

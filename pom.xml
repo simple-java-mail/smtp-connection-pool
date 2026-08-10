@@ -12,7 +12,7 @@
 
 	<groupId>org.simplejavamail</groupId>
 	<artifactId>smtp-connection-pool-parent</artifactId>
-	<version>3.1.0</version>
+	<version>4.0.0</version>
 	<packaging>pom</packaging>
 	<name>SMTP Connection Pool Reactor</name>
 	<description>Version-aligned reactor for the SMTP connection pool, Jakarta Mail provider, Camel adapter and executable demos.</description>

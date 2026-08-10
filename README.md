@@ -9,7 +9,7 @@
 
 It does not build messages or decide how SMTP works. The selected Jakarta Mail provider still owns authentication, TLS, EHLO, PIPELINING, CHUNKING, response parsing, and the actual send.
 
-Version `4.0.0` is the project's architectural expansion into a broader SMTP integration platform: it adds the optional Jakarta Mail provider and Camel adapter while preserving the existing core coordinate and direct API.
+Version `4.0.0` expands the project beyond its direct API with optional Jakarta Mail and Camel integrations. Existing users can keep the same `org.simplejavamail:smtp-connection-pool` dependency and direct API.
 
 ## Start here: executable demos
 
@@ -17,8 +17,8 @@ The best introduction is the non-published [demo project](smtp-connection-pool-d
 
 | Runnable example | Integration shown | Verified result |
 | --- | --- | --- |
-| [DirectPoolDemo](smtp-connection-pool-demo/src/main/java/org/simplejavamail/smtpconnectionpool/demo/DirectPoolDemo.java) | Direct core leases, release, forced failure, invalidation, and recovery | 3 messages over 1 connection; then replacement after a dropped connection |
-| [SimpleJavaMailDemo](smtp-connection-pool-demo/src/main/java/org/simplejavamail/smtpconnectionpool/demo/SimpleJavaMailDemo.java) | Simple Java Mail as the higher-level path-1 consumer | 3 messages over 1 connection |
+| [DirectPoolDemo](smtp-connection-pool-demo/src/main/java/org/simplejavamail/smtpconnectionpool/demo/DirectPoolDemo.java) | Direct leases, release, forced failure, invalidation, and recovery | 3 messages over 1 connection; then replacement after a dropped connection |
+| [SimpleJavaMailDemo](smtp-connection-pool-demo/src/main/java/org/simplejavamail/smtpconnectionpool/demo/SimpleJavaMailDemo.java) | Simple Java Mail as a higher-level library built directly on the pool | 3 messages over 1 connection |
 | [JakartaMailDemo](smtp-connection-pool-demo/src/main/java/org/simplejavamail/smtpconnectionpool/demo/JakartaMailDemo.java) | Plain Jakarta Mail with `smtppool` | 3 messages over 1 connection |
 | [SpringDemo](smtp-connection-pool-demo/src/main/java/org/simplejavamail/smtpconnectionpool/demo/SpringDemo.java) | Spring `JavaMailSenderImpl` with `smtppool` | 3 messages over 1 connection |
 | [CamelDemo](smtp-connection-pool-demo/src/main/java/org/simplejavamail/smtpconnectionpool/demo/CamelDemo.java) | Camel with the separate `smtppool:` adapter | 3 messages over 1 connection |
@@ -29,25 +29,25 @@ Run the complete executable suite with JDK 21:
 mvn -pl smtp-connection-pool-demo -am test
 ```
 
-Or run `DemoLauncher` or any individual demo directly from IntelliJ. The project is part of the reactor and CI, but is deliberately excluded from Maven Central. A standalone `batch-module` demo will join it after Simple Java Mail 10.0.0 publishes the supported path-2 API from [#698](https://github.com/bbottema/simple-java-mail/issues/698).
+Or run `DemoLauncher` or any individual demo directly from IntelliJ. The demo is built and tested with the rest of the project, but is deliberately excluded from Maven Central. A standalone `batch-module` demo will join it after Simple Java Mail 10.0.0 publishes the supported path-2 API from [#698](https://github.com/bbottema/simple-java-mail/issues/698).
 
 ## Choose one of three usage paths
 
 These are usage paths, not three abstraction levels inside this repository.
 
-| Path | Choose it when | Lifecycle owner | Status |
+| Path | Choose it when | Who manages the pool | Status |
 | --- | --- | --- | --- |
-| **1. Integrate the core pool directly** | Your application or a higher-level library needs clustering, explicit leases, and complete failure/shutdown control. Simple Java Mail itself belongs here. | Your integration | Available; explicit `SmtpTransportLease` is available since 4.0.0 |
-| **2. Use Simple Java Mail's `batch-module` directly** | You create Jakarta Mail messages yourself but want Simple Java Mail's asynchronous batch engine and a safe callback facade without adopting `EmailBuilder` and `Mailer`. | The batch facade | Planned for Simple Java Mail 10.0.0 in [#698](https://github.com/bbottema/simple-java-mail/issues/698) |
-| **3. Use the standard Jakarta Mail facade** | Plain Jakarta Mail, Spring, or Camel already obtains and closes `Transport` instances. | `PooledTransport` | Available since 4.0.0 through [#10](https://github.com/simple-java-mail/smtp-connection-pool/issues/10) |
+| **1. Use the pool directly** | Your application or a higher-level library needs clustering, explicit leases, and complete failure/shutdown control. Simple Java Mail itself belongs here. | Your application or library | Available; explicit `SmtpTransportLease` is available since 4.0.0 |
+| **2. Use Simple Java Mail's `batch-module` directly** | You create Jakarta Mail messages yourself but want Simple Java Mail's asynchronous batch engine and a safe callback API without adopting `EmailBuilder` and `Mailer`. | Simple Java Mail's batch API | Planned for Simple Java Mail 10.0.0 in [#698](https://github.com/bbottema/simple-java-mail/issues/698) |
+| **3. Use it as a Jakarta Mail `Transport`** | Plain Jakarta Mail, Spring, or Camel already obtains and closes `Transport` instances. | `PooledTransport` | Available since 4.0.0 through [#10](https://github.com/simple-java-mail/smtp-connection-pool/issues/10) |
 
-Simple Java Mail stays on path 1 internally. Path 2 is a narrower public facade over part of its batch engine. Path 3 makes pooling look like a normal Jakarta Mail transport protocol.
+Simple Java Mail stays on path 1 internally. Path 2 is a narrower public API over part of its batch engine. Path 3 presents the pool as a normal Jakarta Mail transport protocol.
 
 The architecture, ownership rules, and five flow diagrams are in [PRODUCT-VISION.md](PRODUCT-VISION.md).
 
 ## Artifacts
 
-All three runtime artifacts release together at one version. Maven Central also receives the `smtp-connection-pool-parent` reactor POM because the child POMs inherit their aligned metadata; it is build metadata, not a fourth runtime dependency.
+All three application-facing modules are released together at one version. Maven Central also receives the shared `smtp-connection-pool-parent` POM required by Maven; it is build metadata, not a fourth application dependency.
 
 | Artifact | Purpose | Java |
 | --- | --- | --- |
@@ -55,11 +55,11 @@ All three runtime artifacts release together at one version. Maven Central also 
 | `org.simplejavamail:smtp-connection-pool-jakarta-provider` | Discoverable `smtppool` Jakarta Mail provider and Session-scoped lifecycle registry | 8+ |
 | `org.simplejavamail:smtp-connection-pool-camel` | Optional Camel Mail selection adapter; pooling remains in the provider module | 17+ (Camel 4.21) |
 
-The reactor also contains `smtp-connection-pool-demo`. It is a build-tested example project, not a fourth runtime artifact, and is explicitly excluded from Maven Central.
+The repository also contains `smtp-connection-pool-demo`. It is an example project tested with every build, not a fourth published module, and is explicitly excluded from Maven Central.
 
-The provider artifact contains the Jakarta Mail facade, not a physical SMTP implementation. Applications supply Angus Mail or another compatible `Transport` provider. A delegate must represent one reusable physical connection; do not put a hidden second connection pool beneath this pool.
+The provider module lets Jakarta Mail, Spring, and Camel obtain pooled `Transport` instances; it does not speak SMTP itself. Applications still supply Angus Mail or another compatible SMTP `Transport` provider. Each underlying `Transport` must represent one reusable physical connection—do not hide a second connection pool beneath this one.
 
-## Path 1: direct core API
+## Path 1: use the pool directly
 
 ```xml
 <dependency>
@@ -128,11 +128,11 @@ The supplier owns caching and refresh. A fixed token remains available through `
 
 ## Path 2: Simple Java Mail `batch-module`
 
-This path is deliberately delivered in Simple Java Mail, not in this repository. [Simple Java Mail #698](https://github.com/bbottema/simple-java-mail/issues/698) plans a small public callback facade for Simple Java Mail 10.0.0, for applications that already create Jakarta Mail messages but want the batch engine's asynchronous execution, clustering, and safe release/invalidate handling without adopting the full `EmailBuilder`/`Mailer` API.
+This path is deliberately delivered in Simple Java Mail, not in this repository. [Simple Java Mail #698](https://github.com/bbottema/simple-java-mail/issues/698) plans a small public callback API for Simple Java Mail 10.0.0, for applications that already create Jakarta Mail messages but want the batch engine's asynchronous execution, clustering, and safe release/invalidate handling without adopting the full `EmailBuilder`/`Mailer` API.
 
-The batch facade will use the core lease internally and remain separate from `smtppool`; stacking both pooling owners would be incorrect. Until Simple Java Mail 10.0.0 ships that facade, `batch-module` remains an internal implementation module rather than a supported standalone API. The executable demo project therefore does not demonstrate this path yet.
+The batch API will use `SmtpTransportLease` internally and remain separate from `smtppool`; using both pools together would give two components responsibility for the same connections. Until Simple Java Mail 10.0.0 ships that API, `batch-module` remains an internal implementation module rather than a supported standalone API. The executable demo project therefore does not demonstrate this path yet.
 
-## Path 3: standard Jakarta Mail facade
+## Path 3: use it as a Jakarta Mail `Transport`
 
 Add the provider plus a physical Jakarta Mail implementation:
 
@@ -149,7 +149,7 @@ Add the provider plus a physical Jakarta Mail implementation:
 </dependency>
 ```
 
-The facade registers only `smtppool`; it never replaces or pretends to be `smtp` or `smtps`.
+The provider registers only `smtppool`; it never replaces or pretends to be `smtp` or `smtps`.
 
 ```java
 Properties properties = new Properties();
@@ -191,13 +191,13 @@ See the [provider reference](smtp-connection-pool-jakarta-provider/README.md) an
 
 ## Build and verification
 
-Build the reactor with JDK 21 and Maven. Core and provider bytecode still target Java 8; the Camel and demo modules target Java 17.
+Build the complete project with JDK 21 and Maven. The original pool and Jakarta provider still run on Java 8; the Camel and demo modules require Java 17.
 
 ```shell
 mvn clean verify
 ```
 
-Verification runs the core/provider/Camel tests, the real-server demo smoke tests, SpotBugs, Javadocs, and a checksum-pinned japicmp comparison with the published `3.1.0` core. CircleCI also compiles and tests the core plus Jakarta provider on an actual JDK 8; its JDK 21 release lane advances the parent and all children as one reactor while excluding the demo from publication.
+Verification runs all module tests, the real-server demo smoke tests, SpotBugs, Javadocs, and a checksum-pinned japicmp comparison with the published `3.1.0` library. CircleCI also compiles and tests the original pool plus Jakarta provider on an actual JDK 8. Its JDK 21 release job versions and publishes all public modules together while leaving out the demo.
 
 ## Related custom transports
 
@@ -207,7 +207,7 @@ Verification runs the core/provider/Camel tests, the real-server demo smoke test
 
 `4.0.0` (10 August 2026)
 
-- [#10](https://github.com/simple-java-mail/smtp-connection-pool/issues/10): add the explicit lease API, optional `smtppool` Jakarta Mail provider, and separate Camel adapter while preserving the existing core coordinate and direct API. Harden credential rotation and graceful/forced shutdown using `generic-object-pool 2.4.1` and `clustered-object-pool 4.0.2`.
+- [#10](https://github.com/simple-java-mail/smtp-connection-pool/issues/10): add the explicit lease API, optional `smtppool` Jakarta Mail provider, and separate Camel adapter without changing the existing `org.simplejavamail:smtp-connection-pool` dependency or direct API. Harden credential rotation and graceful/forced shutdown using `generic-object-pool 2.4.1` and `clustered-object-pool 4.0.2`.
 
 `3.1.0` (7 August 2026)
 

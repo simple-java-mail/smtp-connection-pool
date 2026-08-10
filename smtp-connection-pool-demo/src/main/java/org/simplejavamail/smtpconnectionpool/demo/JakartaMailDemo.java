@@ -14,7 +14,7 @@ public final class JakartaMailDemo {
     private JakartaMailDemo() {
     }
 
-    /** Sends three messages through separate facade transports backed by one physical connection. */
+    /** Sends three messages through separate pooled transports backed by one physical connection. */
     public static DemoResult run() throws Exception {
         try (CountingSmtpServer server = CountingSmtpServer.start()) {
             final Properties properties = DemoSupport.smtpProperties(server.getPort());

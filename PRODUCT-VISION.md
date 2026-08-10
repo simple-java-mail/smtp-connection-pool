@@ -1,25 +1,25 @@
 # Product vision: three ways to use pooled SMTP transports
 
-- Status: **locked product baseline delivered by [#10](https://github.com/simple-java-mail/smtp-connection-pool/issues/10)**
+- Status: **shipped in `4.0.0` through [#10](https://github.com/simple-java-mail/smtp-connection-pool/issues/10)**
 - Release: **`4.0.0`**
-- Downstream: **[Simple Java Mail #698](https://github.com/bbottema/simple-java-mail/issues/698)**
+- Simple Java Mail follow-up: **[#698](https://github.com/bbottema/simple-java-mail/issues/698)**
 - Related transport initiative: **[Simple Java Mail #699](https://github.com/bbottema/simple-java-mail/issues/699)**
 
-## Executable reference implementation
+## See it work
 
 Start with the [demo project](smtp-connection-pool-demo/README.md), not the diagrams. It turns the product model into five runnable integrations against a random-port dummy SMTP server:
 
 1. [direct pool ownership](smtp-connection-pool-demo/src/main/java/org/simplejavamail/smtpconnectionpool/demo/DirectPoolDemo.java), including forced disconnect, invalidation, and recovery;
-2. [Simple Java Mail](smtp-connection-pool-demo/src/main/java/org/simplejavamail/smtpconnectionpool/demo/SimpleJavaMailDemo.java) as the higher-level reference consumer of path 1;
+2. [Simple Java Mail](smtp-connection-pool-demo/src/main/java/org/simplejavamail/smtpconnectionpool/demo/SimpleJavaMailDemo.java) as a higher-level library built directly on the pool;
 3. [plain Jakarta Mail](smtp-connection-pool-demo/src/main/java/org/simplejavamail/smtpconnectionpool/demo/JakartaMailDemo.java), [Spring](smtp-connection-pool-demo/src/main/java/org/simplejavamail/smtpconnectionpool/demo/SpringDemo.java), and [Camel](smtp-connection-pool-demo/src/main/java/org/simplejavamail/smtpconnectionpool/demo/CamelDemo.java) as path-3 variants.
 
-The smoke tests assert delivered messages, accepted physical sessions, reuse, and zero active sessions after shutdown. The demo is compiled and tested with the reactor but excluded from Maven Central, so the published product remains three runtime artifacts.
+The smoke tests assert delivered messages, the number of physical connections opened, connection reuse, and zero active connections after shutdown. The demo is built and tested with the rest of the project but excluded from Maven Central, so only the three application-facing modules are published.
 
-There is intentionally no standalone path-2 demo before Simple Java Mail 10.0.0 releases the public facade from #698. The Simple Java Mail 9.2.0 example includes `batch-module` only as internal support for its high-level `Mailer` and never calls an internal batch API. Once the supported path-2 API exists, its canonical runnable example will be added to this demo project and linked from the Simple Java Mail website.
+There is intentionally no standalone path-2 demo before Simple Java Mail 10.0.0 releases the public API from #698. The Simple Java Mail 9.2.0 example includes `batch-module` only as internal support for its high-level `Mailer` and never calls an internal batch API. Once the supported path-2 API exists, its official runnable example will be added to this demo project and linked from the Simple Java Mail website.
 
 ## Product promise
 
-`smtp-connection-pool` supports both kinds of consumers:
+`smtp-connection-pool` supports two kinds of integration:
 
 - software that deliberately owns the claim, send, release/invalidate, and shutdown lifecycle; and
 - software that only knows the standard Jakarta Mail `Session` and `Transport` lifecycle.
@@ -32,13 +32,13 @@ The pool owns connection leasing and lifecycle; the selected Jakarta Mail `Trans
 
 These are product choices, not a one-to-one count of Maven artifacts.
 
-| Path | Choose this when | Lifecycle owner | Status |
+| Path | Choose this when | Who manages the pool | Status |
 | --- | --- | --- | --- |
-| 1. Direct `smtp-connection-pool` integration | The application or a higher-level library needs full control over clustering, selection, transport access, failure handling, and shutdown. Simple Java Mail is the reference higher-level consumer of this path. | The integrating application or library | Available now |
-| 2. Simple Java Mail `batch-module` directly | The application wants the batch executor and clustered pooling without the higher-level `EmailBuilder` and `Mailer` APIs. It still creates its own `MimeMessage` objects and sends them inside a safe transport callback. | A public batch-module facade | Planned for Simple Java Mail 10.0.0 in [#698](https://github.com/bbottema/simple-java-mail/issues/698) |
-| 3. Standard Jakarta Mail facade | A framework owns `Transport` acquisition and closing. Plain Jakarta Mail and Spring select the `smtppool` protocol; Camel uses a small adapter that makes the same selection. | `PooledTransport` | Available since 4.0.0 through [#10](https://github.com/simple-java-mail/smtp-connection-pool/issues/10) |
+| 1. Use `smtp-connection-pool` directly | The application or a higher-level library needs full control over clustering, selection, transport access, failure handling, and shutdown. Simple Java Mail itself uses this path. | The application or library | Available now |
+| 2. Use Simple Java Mail's `batch-module` directly | The application wants the batch executor and clustered pooling without the higher-level `EmailBuilder` and `Mailer` APIs. It still creates its own `MimeMessage` objects and sends them inside a safe transport callback. | Simple Java Mail's public batch API | Planned for Simple Java Mail 10.0.0 in [#698](https://github.com/bbottema/simple-java-mail/issues/698) |
+| 3. Use it as a Jakarta Mail `Transport` | A framework owns `Transport` acquisition and closing. Plain Jakarta Mail and Spring select the `smtppool` protocol; Camel uses a small adapter that makes the same selection. | `PooledTransport` | Available since 4.0.0 through [#10](https://github.com/simple-java-mail/smtp-connection-pool/issues/10) |
 
-Simple Java Mail remains on path 1 internally. It should reuse the common lease contract introduced by this work, but should not route its own rich transport lifecycle through `PooledTransport`. Its public path-2 facade keeps that raw lease internal and automatically selects release or invalidation around the caller's callback.
+Simple Java Mail remains on path 1 internally. It should reuse the common lease contract introduced by this work, but should not route its richer transport lifecycle through `PooledTransport`. Its public path-2 API keeps the raw lease internal and automatically releases or invalidates it around the caller's callback.
 
 ## Physical transport boundary and Simple Java Mail #699
 
@@ -53,7 +53,7 @@ Simple Java Mail, batch-module, Spring, Camel, or plain Jakarta Mail
                               -> SMTP server
 ```
 
-The interoperability boundary is fixed by these requirements:
+To work together safely, physical SMTP implementations must follow these rules:
 
 - The allocator and `smtppool` provider accept an explicit delegate protocol or `Provider`; they are not hard-coded to Angus, `smtp`, or `smtps`.
 - A pooled delegate `Transport` represents one reusable physical SMTP connection. The pool leases it exclusively and serially; it never assumes that one connection can be used concurrently even if a delegate implementation is thread-safe.
@@ -65,25 +65,25 @@ The interoperability boundary is fixed by these requirements:
 
 This repository does not wait for #699 and does not depend on NioSmtpClient or any other candidate implementation. It supplies and tests the neutral boundary so #699 can compose later without changing the three-path product model.
 
-## Artifact model
+## Published modules
 
-The repository is a version-aligned Maven reactor while preserving the existing core coordinate.
+The project now builds several Maven modules at one shared version. Existing users keep the same `org.simplejavamail:smtp-connection-pool` dependency.
 
 | Artifact | Responsibility | Dependencies |
 | --- | --- | --- |
 | `org.simplejavamail:smtp-connection-pool` | Existing direct API, physical connection pooling, and the exclusive transport-lease contract | Jakarta Mail API and clustered-object-pool |
-| `org.simplejavamail:smtp-connection-pool-jakarta-provider` | `smtppool` Jakarta Mail provider, configuration mapping, provider-owned pool registry, and explicit shutdown API | Core artifact; the application supplies a compatible physical Jakarta Mail `Transport` provider at runtime |
+| `org.simplejavamail:smtp-connection-pool-jakarta-provider` | `smtppool` Jakarta Mail provider, configuration mapping, provider-owned pool registry, and explicit shutdown API | The original pool module; the application supplies a compatible physical Jakarta Mail `Transport` provider at runtime |
 | `org.simplejavamail:smtp-connection-pool-camel` | Camel-specific selection adapter; it must not globally replace Camel's normal `smtp` provider | Jakarta provider plus a declared/tested Camel line |
 
 The `jakarta-provider` name is deliberate: Jakarta Mail owns the SPI contract; this artifact supplies an implementation of it. The Camel artifact is selection glue over that provider, not a second mail-provider SPI.
 
-Simple Java Mail's existing `batch-module` remains in the Simple Java Mail repository. It is path 2, not a fourth module in this repository. The reactor-only demo project described above is executable documentation rather than a published product artifact.
+Simple Java Mail's existing `batch-module` remains in the Simple Java Mail repository. It is path 2, not a fourth module in this repository. The demo project described above is executable documentation and is not published to Maven Central.
 
-The root POM becomes an aggregator/parent. The core child retains the existing `org.simplejavamail:smtp-connection-pool` GAV so current consumers do not change dependency coordinates. All artifacts released from this repository use the same version and tag. A SemVer-minor release also requires binary compatibility with `3.1.0`, not only source compatibility.
+The root POM is the shared Maven parent. The original library remains available as `org.simplejavamail:smtp-connection-pool`, so existing builds do not need a dependency change. Every module released from this repository uses the same version and tag. Although `4.0.0` deliberately marks a major architectural milestone, the original library remains binary-compatible with `3.1.0`.
 
 ## Shared lifecycle contract
 
-Both the Jakarta provider and Simple Java Mail need the same small abstraction over a claimed pooled object. The core artifact exposes `SmtpTransportLease` with:
+Both the Jakarta provider and Simple Java Mail need the same small abstraction over a claimed pooled object. The original pool module exposes `SmtpTransportLease` with:
 
 - the Jakarta Mail `Session` that created the physical transport;
 - the real, connected `Transport`;
@@ -117,9 +117,9 @@ Each successful `connect()` creates a new lease generation. `close()` atomically
 
 The provider owns pools by default and exposes deterministic per-`Session` and global shutdown. Graceful shutdown rejects new claims, lets active lease generations finish, and reports completion only after their physical transports close. Callers may time out while waiting and escalate through forced shutdown, which invalidates active leases and returns the same lifecycle `Future`. The Session keeps its shutting-down manager registered until that handle finishes, so escalation cannot accidentally target an empty replacement manager. Claim, manager installation, close, reconnect, and shutdown races have one observable outcome. Manager injection is available for applications that own lifecycle centrally. A shut-down Session remains closed to claims until cleanup finishes and an explicit registry restart occurs.
 
-### Locked hybrid delegate selection
+### How the physical SMTP provider is selected
 
-The public facade protocol is `smtppool`. The provider never registers itself as, or pretends to be, `smtp` or `smtps`.
+The public protocol name is `smtppool`. The provider never registers itself as, or pretends to be, `smtp` or `smtps`.
 
 The physical delegate is selected through two deliberate entry points that converge on the same allocator and connection identity:
 
@@ -130,7 +130,7 @@ The physical delegate is selected through two deliberate entry points that conve
 
 The declarative key is `mail.smtppool.delegate.protocol` and defaults to `smtp`. Programmatic integrations use `SmtpPoolProperties.setDelegateProvider(...)` or `setDelegateProviderResolver(...)`. Both branches resolve a concrete provider identity before the pool key is constructed, and both reject `PooledTransport` itself as the physical delegate. The complete property table is in the [provider reference](smtp-connection-pool-jakarta-provider/README.md).
 
-Camel's adapter therefore performs an explicit selection, conceptually `getTransport("smtppool")`. That selection glue lives only in the separate `smtp-connection-pool-camel` module; pooling and hybrid delegate resolution remain in the core and Jakarta-provider modules. It is not a spoof that registers the wrapper under Camel's expected `smtp` name. Ordinary `smtp` and `smtps` lookups continue to return their ordinary providers.
+Camel's adapter therefore performs an explicit selection, conceptually `getTransport("smtppool")`. That selection glue lives only in the separate `smtp-connection-pool-camel` module; pooling and physical-provider selection remain in the original pool and Jakarta-provider modules. It does not register the wrapper under Camel's expected `smtp` name. Ordinary `smtp` and `smtps` lookups continue to return their ordinary providers.
 
 ### Preventing recursive provider lookup
 
@@ -144,7 +144,7 @@ The provider path therefore requests the real delegate through the locked hybrid
 - **Spring:** configure `JavaMailSenderImpl` to use protocol `smtppool`. Spring continues to supply host, port, username, and password through its normal connection call.
 - **Camel:** use the optional `smtppool:` or `smtppools:` Camel component, which explicitly selects the Jakarta provider while retaining `smtp` or `smtps` as the physical delegate. Do not spoof or register `PooledTransport` globally as `smtp`, because that would change unrelated Jakarta Mail users and create delegate-recursion risk.
 
-The Camel artifact targets Camel Mail 4.21 and Java 17. Core and provider remain Java 8 artifacts, so Camel cannot raise their baseline.
+The Camel module targets Camel Mail 4.21 and Java 17. The original pool and Jakarta provider remain compatible with Java 8, so Camel cannot raise their baseline.
 
 ## Non-goals
 
@@ -209,7 +209,7 @@ Spring can reuse one transport within a single multi-message `send(...)` call, b
 
 ### 3. Direct, Spring, and Camel paths together
 
-The direct API and provider facade share the core implementation while retaining separate ownership. The Camel adapter reaches the same provider without globally replacing `smtp`.
+The direct API and Jakarta provider share the connection-pool implementation while keeping their lifecycles separate. The Camel adapter reaches the same provider without globally replacing `smtp`.
 
 ```mermaid
 flowchart TB
@@ -222,7 +222,7 @@ flowchart TB
         DIRECT_RESULT -- "Broken" --> DIRECT_INVALIDATE["Invalidate"]
     end
 
-    subgraph FACADE["Path 3: standard Jakarta Mail facade"]
+    subgraph FACADE["Path 3: Jakarta Mail Transport integration"]
         PLAIN["Plain Jakarta Mail"] --> SELECT["Select protocol smtppool"]
         SPRING["Spring JavaMailSender"] --> SELECT
         CAMEL["Camel Mail"] --> CAMEL_ADAPTER["smtp-connection-pool-camel"]
@@ -236,7 +236,7 @@ flowchart TB
         WRAPPER --> TRANSLATE["connect = claim<br/>sendMessage = delegate<br/>close = release or invalidate"]
     end
 
-    DIRECT_POOL --> CORE["Shared smtp-connection-pool core"]
+    DIRECT_POOL --> CORE["Shared pool implementation"]
     PROVIDER_POOL --> CORE
     CORE --> AVAILABLE{"Physical connection available?"}
     AVAILABLE -- "Yes" --> PHYSICAL["Connected physical SMTP Transport"]
@@ -245,9 +245,9 @@ flowchart TB
     PHYSICAL --> SERVER["SMTP server"]
 ```
 
-### 4. Simple Java Mail remains a direct integration (downstream update)
+### 4. Simple Java Mail remains a direct integration (follow-up work)
 
-Simple Java Mail keeps the richer lifecycle that a generic provider would hide. Its adoption of the exclusive lease contract belongs to downstream issue #698 after this release is published.
+Simple Java Mail keeps the richer lifecycle that a generic provider would hide. Its adoption of the exclusive lease contract is tracked separately in issue #698.
 
 ```mermaid
 flowchart TB
@@ -272,24 +272,24 @@ This planned public API supplies batching and pool-aware transport lifecycle wit
 
 ```mermaid
 flowchart TB
-    APP["Application using batch-module directly"] --> PUBLIC["Stable public batch facade"]
+    APP["Application using batch-module directly"] --> PUBLIC["Stable public batch API"]
     PUBLIC --> EXECUTOR["Own or inject ExecutorService"]
     PUBLIC --> CONFIG["Configure pool and cluster behavior"]
     CONFIG --> REGISTER["Register cluster key and Jakarta Mail Session"]
     REGISTER --> CALLBACK["Run cluster-selected or session-sticky callback"]
     EXECUTOR --> CALLBACK
-    CALLBACK --> INTERNAL["Facade acquires exclusive SMTP transport lease"]
+    CALLBACK --> INTERNAL["Batch API acquires exclusive SMTP transport lease"]
     INTERNAL --> CONTEXT["Callback receives selected Session and Transport"]
     CONTEXT --> WORK["Application creates MimeMessage and invokes sendMessage(...)"]
     WORK --> RESULT{"Callback outcome"}
-    RESULT -- "Returned normally" --> RELEASE["Facade releases lease"]
-    RESULT -- "Threw" --> INVALIDATE["Facade invalidates lease"]
+    RESULT -- "Returned normally" --> RELEASE["Batch API releases lease"]
+    RESULT -- "Threw" --> INVALIDATE["Batch API invalidates lease"]
     SHUTDOWN["Application requests deterministic shutdown"] --> PUBLIC
     HIGH_LEVEL["EmailBuilder, Mailer, DKIM, S/MIME, conversion"] -. "Not used by this path" .-> APP
 ```
 
-The batch facade does not take responsibility for message construction, recipients, delivery retry policy, or the capabilities supplied by the higher-level Simple Java Mail APIs.
+The batch API does not take responsibility for message construction, recipients, delivery retry policy, or the capabilities supplied by the higher-level Simple Java Mail APIs.
 
 ## Decision boundary
 
-The direction above is locked as the local product baseline. Public class names, Session properties, and the Camel 4.21/Java 17 matrix are now recorded in the module references. Review may refine implementation details, but it may not change the three paths, lifecycle ownership, hybrid delegate-selection model, explicit `smtppool` facade, rejection of `smtp`/`smtps` spoofing, single-pooling-owner rule, or the decision to keep Simple Java Mail on the direct path. GitHub issue #10 remains the record for implementation acceptance and release scope.
+This is the product direction shipped in `4.0.0`. Public class names, Session properties, and the Camel 4.21/Java 17 matrix are recorded in the module references. Later refinements must preserve the three paths, their lifecycle responsibilities, hybrid physical-provider selection, explicit `smtppool` protocol, rejection of `smtp`/`smtps` spoofing, single-pooling-owner rule, and Simple Java Mail's direct use of the pool. GitHub issue #10 remains the record of the accepted scope.

@@ -6,7 +6,7 @@ RELEASE NOTES SMTP Connection Pool
 
 v4.0.0 (10-Aug-2026)
 
-- #10: Add an explicit SMTP transport lease, an optional Jakarta Mail smtppool provider, and a separate Camel selection adapter while preserving the existing direct API and core coordinate. Include a build-tested but non-published demo project for direct, Simple Java Mail, Jakarta Mail, Spring, and Camel usage; defer the standalone batch-module example until Simple Java Mail 10.0.0 exposes its supported facade. Harden credential-generation retirement and graceful-to-forced shutdown with generic-object-pool 2.4.1 and clustered-object-pool 4.0.2.
+- #10: Add an explicit SMTP transport lease, an optional Jakarta Mail smtppool provider, and a separate Camel selection adapter without changing the existing `org.simplejavamail:smtp-connection-pool` dependency or direct API. Include a build-tested but non-published demo project for direct, Simple Java Mail, Jakarta Mail, Spring, and Camel usage; defer the standalone batch-module example until Simple Java Mail 10.0.0 exposes its supported public API. Harden credential-generation retirement and graceful-to-forced shutdown with generic-object-pool 2.4.1 and clustered-object-pool 4.0.2.
 
 
 v3.1.0 (07-Aug-2026)

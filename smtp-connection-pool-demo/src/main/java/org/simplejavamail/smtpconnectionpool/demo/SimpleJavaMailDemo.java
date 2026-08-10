@@ -5,7 +5,7 @@ import org.simplejavamail.mailer.MailerBuilder;
 
 import java.util.concurrent.TimeUnit;
 
-/** Path 1 reference consumer: high-level email creation and sending with Simple Java Mail. */
+/** Path 1 at a higher level: email creation and sending with Simple Java Mail, which uses the pool directly. */
 public final class SimpleJavaMailDemo {
     private SimpleJavaMailDemo() {
     }

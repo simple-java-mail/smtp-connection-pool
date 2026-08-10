@@ -8,9 +8,9 @@ import jakarta.mail.Session;
 @FunctionalInterface
 public interface SmtpDelegateProviderResolver {
     /**
-     * Resolves the physical transport provider for one facade connection attempt.
+     * Selects the physical transport provider for one pooled connection attempt.
      *
-     * @param session Session that owns the facade and its pools
+     * @param session Session requesting the pooled connection
      * @param delegateProtocol configured physical protocol
      * @return a non-null physical transport provider
      * @throws MessagingException when no suitable provider can be selected

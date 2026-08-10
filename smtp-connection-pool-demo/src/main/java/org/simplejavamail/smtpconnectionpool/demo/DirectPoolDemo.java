@@ -9,7 +9,7 @@ import org.simplejavamail.smtpconnectionpool.SmtpTransportLease;
 
 import java.util.concurrent.TimeUnit;
 
-/** Path 1: direct use of the core lease API, including explicit invalidation on failure. */
+/** Path 1: direct use of the transport lease API, including explicit invalidation on failure. */
 public final class DirectPoolDemo {
     private DirectPoolDemo() {
     }
@@ -26,7 +26,7 @@ public final class DirectPoolDemo {
             } finally {
                 pool.shutDown().get(5, TimeUnit.SECONDS);
             }
-            return server.verify("Direct core pool", DemoSupport.MESSAGE_COUNT, 1);
+            return server.verify("Direct pool", DemoSupport.MESSAGE_COUNT, 1);
         }
     }
 

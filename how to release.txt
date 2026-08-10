@@ -1,6 +1,6 @@
 This legacy filename is retained for existing bookmarks.
 
 The authoritative release workflow is RELEASING.md. Releases use the
-CircleCI github-maven-deploy lanes and the milestone/tag/GitHub Release
+CircleCI github-maven-deploy jobs and the milestone/tag/GitHub Release
 bookkeeping documented there; do not use the obsolete manual OSSRH steps that
 used to live in this file.

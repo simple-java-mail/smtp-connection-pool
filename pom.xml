@@ -14,8 +14,8 @@
 	<artifactId>smtp-connection-pool-parent</artifactId>
 	<version>4.0.0</version>
 	<packaging>pom</packaging>
-	<name>SMTP Connection Pool Reactor</name>
-	<description>Version-aligned reactor for the SMTP connection pool, Jakarta Mail provider, Camel adapter and executable demos.</description>
+	<name>SMTP Connection Pool :: Parent</name>
+	<description>Shared Maven build for the SMTP connection pool, Jakarta Mail provider, Camel adapter and executable demos.</description>
 	<url>https://github.com/simple-java-mail/smtp-connection-pool</url>
 	<inceptionYear>2019</inceptionYear>
 
@@ -183,7 +183,7 @@
 				<plugin>
 					<groupId>org.apache.felix</groupId>
 					<artifactId>maven-bundle-plugin</artifactId>
-					<!-- 5.x keeps the build itself runnable on the same Java 8 baseline as the core/provider artifacts. -->
+					<!-- 5.x keeps the build itself runnable on the Java 8 baseline of the pool/provider modules. -->
 					<version>5.1.9</version>
 				</plugin>
 				<plugin>

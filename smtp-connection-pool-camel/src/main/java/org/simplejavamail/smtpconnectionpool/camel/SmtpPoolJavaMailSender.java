@@ -7,8 +7,8 @@ import org.apache.camel.component.mail.DefaultJavaMailSender;
 import org.simplejavamail.smtpconnectionpool.jakarta.SmtpPoolProperties;
 
 /**
- * Camel sender that preserves Camel's original protocol as the physical delegate and selects {@code smtppool}
- * for the Jakarta Mail facade.
+ * Camel sender that keeps Camel's original protocol for the physical SMTP connection and asks Jakarta Mail
+ * for the {@code smtppool} transport.
  */
 public final class SmtpPoolJavaMailSender extends DefaultJavaMailSender {
     private final SessionTracker sessionTracker;

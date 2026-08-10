@@ -1,26 +1,26 @@
 # Releasing smtp-connection-pool
 
-This repository follows the orchestration in Simple Java Mail's [maintainer workflow](https://github.com/bbottema/simple-java-mail/blob/master/MAINTAINER_WORKFLOW.md), adapted to a supporting-library reactor. This file is the authoritative local guide; `how to release.txt` is retained only as a pointer for old bookmarks.
+This repository follows the orchestration in Simple Java Mail's [maintainer workflow](https://github.com/bbottema/simple-java-mail/blob/master/MAINTAINER_WORKFLOW.md), adapted to this multi-module supporting library. This file is the authoritative local guide; `how to release.txt` is retained only as a pointer for old bookmarks.
 
-The [real-server demo suite](smtp-connection-pool-demo/README.md) is executable release evidence, not ancillary sample code. It must remain prominent in user documentation, pass with the reactor, and stay excluded from published coordinates.
+The [real-server demo suite](smtp-connection-pool-demo/README.md) is executable release evidence, not ancillary sample code. It must remain prominent in user documentation, pass with the rest of the build, and stay out of Maven Central.
 
 ## Authorization boundary
 
-Preparing code, release notes, a milestone, and a draft release plan does not authorize publication. Do not push release commits, approve a CircleCI deployment lane, create or move tags, publish artifacts, or create the final GitHub release without explicit maintainer approval for that release.
+Preparing code, release notes, a milestone, and a draft release plan does not authorize publication. Do not push release commits, approve a CircleCI deployment job, create or move tags, publish artifacts, or create the final GitHub release without explicit maintainer approval for that release.
 
 Website changes in the sibling `simple-java-mail/simplejavamail.org` checkout also require their own approval and release flow.
 
 ## Naming conventions
 
-For a release such as `3.2.0`:
+For a release numbered `X.Y.Z`:
 
-- GitHub milestone: `3.2.0` (no `v`)
-- Git tag: `3.2.0` (no `v`)
-- GitHub release title: `v3.2.0`
-- Conventional release commit: `released 3.2.0 [skip ci]`
-- Maven reactor artifacts: all use `3.2.0`
+- GitHub milestone: `X.Y.Z` (no `v`)
+- Git tag: `X.Y.Z` (no `v`)
+- GitHub release title: `vX.Y.Z`
+- Conventional release commit: `released X.Y.Z [skip ci]`
+- Published Maven modules: all use `X.Y.Z`
 
-An additive provider or adapter is a SemVer minor release unless it introduces a breaking change to the existing core artifact.
+Choose the version using both compatibility and release-signaling intent. A major version may deliberately mark a significant architectural or product milestone even when the existing API remains binary-compatible.
 
 ## 1. Plan the release
 
@@ -37,26 +37,26 @@ Do not create a due-date-free milestone merely to reserve a version. If the date
 1. Verify that `generic-object-pool 2.4.1` and `clustered-object-pool 4.0.2` are published in Maven Central. These versions define the shutdown-completion and retired-pool cleanup semantics used by the provider; do not release against local-only substitutes.
 2. Update `RELEASE.txt`, the README release-note summary, Javadocs, and directly relevant usage examples.
 3. Keep the current released version accurate; add a separate next-release section rather than relabeling an already published version as unreleased.
-4. Run the full reactor verification on JDK 21, without skipping static analysis, including provider discovery and all framework integration tests.
-5. Run `mvn -pl smtp-connection-pool-jakarta-provider -am clean test -Djacoco.skip=true -Dlicense.skip=true` on an actual JDK 8. This is a baseline compilation/test gate for core and provider; the Java-17 Camel/demo modules remain in the JDK-21 reactor lane.
-6. Confirm the core artifact retains `org.simplejavamail:smtp-connection-pool` and that the three runtime JARs plus their technical parent POM will be deployed. The `smtp-connection-pool-demo` module must build and test but must not be published.
-7. Compare the core API and artifact/module metadata with the preceding release using the checksum-pinned binary-compatibility check. Update `core.compatibility.version` and `core.compatibility.sha256` only when preparing the next release line.
+4. Run the complete multi-module verification on JDK 21, without skipping static analysis, including provider discovery and all framework integration tests.
+5. Run `mvn -pl smtp-connection-pool-jakarta-provider -am clean test -Djacoco.skip=true -Dlicense.skip=true` on an actual JDK 8. This is a baseline compilation/test gate for the original pool and Jakarta provider; the Java-17 Camel/demo modules remain in the JDK-21 build.
+6. Confirm that the original library is still published as `org.simplejavamail:smtp-connection-pool` and that the three application-facing JARs plus their shared parent POM will be deployed. The `smtp-connection-pool-demo` module must build and test but must not be published.
+7. Compare the original library's API and artifact/module metadata with the preceding release using the checksum-pinned binary-compatibility check. Update `core.compatibility.version` and `core.compatibility.sha256` only when preparing the next release line.
 8. Inspect the effective POM for every module and run `mvn -s .circleci/maven-central-settings.xml clean deploy -DskipPublishing=true` as a non-publishing deploy-lifecycle rehearsal. `skipPublishing` deliberately prevents Central staging and upload; inspect the locally installed parent POM, all three runtime JAR/source/Javadoc sets, and the demo's build/test output instead. Confirm separately that the CircleCI orb's version rewrite keeps parent and child versions aligned; change the pipeline before release if it does not.
-9. Rehearse or inspect Central bundle creation closely enough to prove that the parent and three runtime coordinates are included and `smtp-connection-pool-demo` is excluded. Do not discover an accidental demo publication after approval.
+9. Rehearse or inspect Central bundle creation closely enough to prove that the parent and three application-facing modules are included and `smtp-connection-pool-demo` is excluded. Do not discover an accidental demo publication after approval.
 10. Confirm the working tree contains only intended release changes.
-11. Merge the reviewed implementation to `master` and allow both the JDK 21 full-reactor and JDK 8 core/provider CircleCI jobs to finish.
+11. Merge the reviewed implementation to `master` and allow both the complete JDK 21 build and the JDK 8 pool/provider CircleCI jobs to finish.
 
-For the CI release path, do not pre-edit the POM to the desired release version. The `github-maven-deploy` CircleCI lane owns version bumping, deployment, the release commit, and the tag.
+For the CI release path, do not pre-edit the POM to the desired release version. The `github-maven-deploy` CircleCI job owns version bumping, deployment, the release commit, and the tag.
 
 ## 3. Publish with CircleCI
 
 After explicit release approval:
 
 1. Choose exactly one approval job: patch, minor, major, or as-is.
-2. For the provider plan in [IMPLEMENTATION-PLAN.md](IMPLEMENTATION-PLAN.md), use the minor lane if the final change remains additive.
+2. Approve the job that matches the version chosen during planning. A major increment may be intentional release signaling even when the compatibility checks pass.
 3. Approve it once and monitor the corresponding deploy job.
 4. Verify the expected release commit and exact numeric tag on GitHub.
-5. Verify every reactor artifact and its signatures in Maven Central. A successful CI job alone is not publication proof.
+5. Verify every expected module and its signatures in Maven Central. A successful CI job alone is not publication proof.
 
 ## 4. Create the GitHub release
 
@@ -95,13 +95,13 @@ Supporting-library releases happen first.
 ## Release definition of done
 
 - Exact-version milestone contains every represented issue/PR.
-- Full reactor is verified and existing core compatibility is covered.
-- The published generic/clustered pool prerequisites are resolved from Maven Central, and the JDK 8 core/provider CI gate passes.
-- The multi-module version/deploy rehearsal proves that the CircleCI lane will publish the complete aligned reactor.
-- The real-server demo smoke tests pass, and the Central bundle excludes the demo coordinate.
+- The complete multi-module build is verified and compatibility with the original library is covered.
+- The published generic/clustered pool prerequisites are resolved from Maven Central, and the JDK 8 pool/provider CI gate passes.
+- The multi-module version/deploy rehearsal proves that the CircleCI job will publish every expected module at the same version.
+- The real-server demo smoke tests pass, and the Central bundle excludes the demo module.
 - Expected tag and all Maven Central artifacts are available.
 - One self-contained GitHub release exists for the tag.
 - Fixed issues carry release-availability comments and are closed.
 - Milestone due date equals actual publication date and the milestone is closed.
 - README, release notes, examples, GitHub, and Maven Central agree.
-- Downstream Simple Java Mail work starts only after the supporting release is complete.
+- Simple Java Mail follow-up work starts only after the supporting release is complete.

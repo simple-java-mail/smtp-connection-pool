@@ -1,6 +1,6 @@
 # Jakarta Mail `smtppool` provider
 
-This module adapts the core connection pool to Jakarta Mail's ordinary `Transport` lifecycle. It is available since `4.0.0`.
+This module lets ordinary Jakarta Mail callers obtain pooled `Transport` instances. It is available since `4.0.0`.
 
 It registers only the protocol `smtppool`. A real transport is selected underneath it; `smtp` and `smtps` are never replaced globally.
 
@@ -18,7 +18,7 @@ Start with the real-server [plain Jakarta Mail demo](../smtp-connection-pool-dem
 </dependency>
 ```
 
-Also supply a physical Jakarta Mail implementation such as Angus Mail. This module deliberately depends only on the Jakarta Mail API and the core pool.
+Also supply a Jakarta Mail implementation that actually speaks SMTP, such as Angus Mail. This module deliberately depends only on the Jakarta Mail API and the connection pool.
 
 ## Plain Jakarta Mail
 
@@ -38,7 +38,7 @@ try {
 SmtpPoolRegistry.shutdown(session).get();
 ```
 
-Each facade `Transport` owns at most one lease generation. `connect` claims it, `sendMessage` delegates serially, and `close` releases it only when the physical delegate remains healthy. The same facade object may connect again after close and receives a fresh generation.
+Each returned `Transport` can hold one pool lease at a time. `connect` claims it, `sendMessage` uses it serially, and `close` releases it only when the physical connection remains healthy. The same `Transport` object can connect again after close and claim a fresh lease.
 
 ## Spring
 
@@ -95,7 +95,7 @@ Provider and resolver values are objects placed with `Properties.put`, not strin
 
 Endpoint identity includes the Session-scoped manager, normalized delegate protocol and resolved provider metadata, host, effective port, username, and an HMAC credential fingerprint. Raw passwords/tokens are excluded from equality and `toString` and retained only while needed for reconnect/allocation. When credentials rotate, the new generation becomes current immediately; the superseded pool accepts no new claims, drains existing leases, and then clears its credential material and retained pool record. Remaining material is cleared on Session-pool shutdown.
 
-Passwords supplied by Jakarta Mail and saved Session authentication are fingerprinted automatically. The core OAuth token supplier is resolved for each facade `connect` so token rotation creates a separate identity. If a custom authenticator rotates credentials without exposing the effective password to the facade, update `mail.smtppool.credential.identity` with its generation/version.
+Passwords supplied by Jakarta Mail and saved Session authentication are fingerprinted automatically. The configured OAuth token supplier is resolved for every pooled `connect`, so rotating a token creates a separate identity. If a custom authenticator rotates credentials without exposing the effective password, update `mail.smtppool.credential.identity` with its generation/version.
 
 ## Delivery events and connection health
 

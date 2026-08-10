@@ -11,12 +11,12 @@ import jakarta.mail.event.TransportEvent;
 import org.simplejavamail.smtpconnectionpool.SmtpTransportLease;
 
 /**
- * Standard Jakarta Mail lifecycle facade over one exclusive pooled lease generation at a time.
+ * Jakarta Mail Transport wrapper that claims one pooled SMTP connection at a time.
  */
 public final class PooledTransport extends Transport {
     private Generation generation;
 
-    /** Creates an unconnected facade transport for Jakarta Mail provider discovery. */
+    /** Creates a disconnected pooled transport for Jakarta Mail provider discovery. */
     public PooledTransport(final Session session, final URLName urlName) {
         super(session, urlName);
     }

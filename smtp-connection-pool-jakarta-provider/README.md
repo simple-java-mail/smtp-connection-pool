@@ -4,6 +4,10 @@ This module adapts the core connection pool to Jakarta Mail's ordinary `Transpor
 
 It registers only the protocol `smtppool`. A real transport is selected underneath it; `smtp` and `smtps` are never replaced globally.
 
+## See it run
+
+Start with the real-server [plain Jakarta Mail demo](../smtp-connection-pool-demo/src/main/java/org/simplejavamail/smtpconnectionpool/demo/JakartaMailDemo.java) and [Spring demo](../smtp-connection-pool-demo/src/main/java/org/simplejavamail/smtpconnectionpool/demo/SpringDemo.java). Both send three messages over one physical SMTP connection and verify that explicit Session shutdown closes it. The [complete demo guide](../smtp-connection-pool-demo/README.md) explains how to run them.
+
 ## Setup
 
 ```xml

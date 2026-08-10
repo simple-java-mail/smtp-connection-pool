@@ -1,6 +1,6 @@
-# Executable demos
+# Start here: executable demos
 
-This reactor-only module is the canonical runnable example project for `smtp-connection-pool`. It is compiled and tested with the repository, but it is deliberately excluded from Maven Central and must not be added as an application dependency.
+This reactor-only module is the canonical runnable introduction to `smtp-connection-pool`. It is compiled and tested with the repository, but it is deliberately excluded from Maven Central and must not be added as an application dependency.
 
 Every scenario starts its own Wiser/SubEtha dummy SMTP server on a random loopback port. The smoke tests verify both message delivery and physical connection behavior, so the examples demonstrate actual reuse rather than only showing configuration.
 

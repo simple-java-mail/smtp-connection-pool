@@ -11,6 +11,26 @@ It does not build messages or decide how SMTP works. The selected Jakarta Mail p
 
 > The provider and Camel modules documented below are implemented for the proposed `3.2.0` release but are not part of the currently published `3.1.0` release. Publication still requires the release process in [RELEASING.md](RELEASING.md).
 
+## Start here: executable demos
+
+The best introduction is the non-published [demo project](smtp-connection-pool-demo/README.md). Every example runs against a real dummy SMTP server on a random port and asserts message delivery, physical connection reuse, and clean shutdown.
+
+| Runnable example | Integration shown | Verified result |
+| --- | --- | --- |
+| [DirectPoolDemo](smtp-connection-pool-demo/src/main/java/org/simplejavamail/smtpconnectionpool/demo/DirectPoolDemo.java) | Direct core leases, release, forced failure, invalidation, and recovery | 3 messages over 1 connection; then replacement after a dropped connection |
+| [SimpleJavaMailDemo](smtp-connection-pool-demo/src/main/java/org/simplejavamail/smtpconnectionpool/demo/SimpleJavaMailDemo.java) | Simple Java Mail as the higher-level path-1 consumer | 3 messages over 1 connection |
+| [JakartaMailDemo](smtp-connection-pool-demo/src/main/java/org/simplejavamail/smtpconnectionpool/demo/JakartaMailDemo.java) | Plain Jakarta Mail with `smtppool` | 3 messages over 1 connection |
+| [SpringDemo](smtp-connection-pool-demo/src/main/java/org/simplejavamail/smtpconnectionpool/demo/SpringDemo.java) | Spring `JavaMailSenderImpl` with `smtppool` | 3 messages over 1 connection |
+| [CamelDemo](smtp-connection-pool-demo/src/main/java/org/simplejavamail/smtpconnectionpool/demo/CamelDemo.java) | Camel with the separate `smtppool:` adapter | 3 messages over 1 connection |
+
+Run the complete executable suite with JDK 21:
+
+```shell
+mvn -pl smtp-connection-pool-demo -am test
+```
+
+Or run `DemoLauncher` or any individual demo directly from IntelliJ. The project is part of the reactor and CI, but is deliberately excluded from Maven Central. A standalone `batch-module` demo will join it after Simple Java Mail 10.0.0 publishes the supported path-2 API from [#698](https://github.com/bbottema/simple-java-mail/issues/698).
+
 ## Choose one of three usage paths
 
 These are usage paths, not three abstraction levels inside this repository.
@@ -163,24 +183,6 @@ to("smtppool://smtp.example.com:587"
 ```
 
 See the [provider reference](smtp-connection-pool-jakarta-provider/README.md) and [Camel reference](smtp-connection-pool-camel/README.md) for configuration, programmatic delegate selection, credential rotation, and shutdown semantics.
-
-## Executable demos
-
-The non-published [demo module](smtp-connection-pool-demo/README.md) is the canonical example project for all currently supported variants. It starts a real dummy SMTP server on a random port and verifies physical connection reuse and shutdown in code.
-
-The examples deliberately appear in product order:
-
-1. direct core-pool integration, including forced failure/invalidation;
-2. Simple Java Mail as the higher-level path-1 consumer;
-3. plain Jakarta Mail, Spring, and Camel variants of path 3.
-
-Run all smoke tests with:
-
-```shell
-mvn -pl smtp-connection-pool-demo -am test
-```
-
-There is no standalone path-2 batch example until the public facade planned for Simple Java Mail 10.0.0 is actually released. The Simple Java Mail demo's `batch-module` dependency is internal support for the high-level Mailer; it does not call the unsupported batch internals.
 
 ## Build and verification
 

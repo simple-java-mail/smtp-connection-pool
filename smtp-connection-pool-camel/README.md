@@ -4,6 +4,10 @@ This optional module makes Camel Mail select the `smtppool` Jakarta Mail facade.
 
 It targets Camel Mail `4.21.x` and Java 17. It is implemented for the proposed `3.2.0` release and is not present in the currently published `3.1.0` release.
 
+## See it run
+
+Start with the real-server [Camel demo](../smtp-connection-pool-demo/src/main/java/org/simplejavamail/smtpconnectionpool/demo/CamelDemo.java). It sends three messages through the `smtppool:` component over one physical SMTP connection and proves that stopping Camel closes the component-owned pool. The [complete demo guide](../smtp-connection-pool-demo/README.md) explains how to run it.
+
 ## Setup
 
 ```xml

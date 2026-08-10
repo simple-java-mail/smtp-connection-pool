@@ -2,6 +2,16 @@
 
 This plan executes the locked local planning baseline in [PRODUCT-VISION.md](PRODUCT-VISION.md). Phases 0–5 are implemented in the current working tree; unchecked entries identify release work or explicit hardening still outstanding. The upstream work is tracked by [smtp-connection-pool #10](https://github.com/simple-java-mail/smtp-connection-pool/issues/10); review acceptance and release scope remain decisions recorded in that issue. The dependent Simple Java Mail work is tracked separately by [Simple Java Mail #698](https://github.com/bbottema/simple-java-mail/issues/698), with [Simple Java Mail #699](https://github.com/bbottema/simple-java-mail/issues/699) treated as a related physical-transport initiative rather than a dependency.
 
+## Run the implementation first
+
+The [executable demo project](smtp-connection-pool-demo/README.md) is the quickest way to review this plan's delivered behavior. Its shared smoke suite executes direct pooling and failure recovery first, Simple Java Mail second, then plain Jakarta Mail, Spring, and Camel. It verifies real message delivery, physical connection counts, reuse, and deterministic shutdown:
+
+```shell
+mvn -pl smtp-connection-pool-demo -am test
+```
+
+The module is a CI-tested part of the reactor and a release gate, while remaining excluded from publication. The missing standalone `batch-module` example is deliberate until Simple Java Mail 10.0.0 delivers #698's supported public facade.
+
 ## Delivery target
 
 - Proposed target release: `3.2.0` (SemVer minor, provided the implemented candidate is accepted in #10).

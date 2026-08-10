@@ -5,6 +5,18 @@
 - Downstream: **[Simple Java Mail #698](https://github.com/bbottema/simple-java-mail/issues/698)**
 - Related transport initiative: **[Simple Java Mail #699](https://github.com/bbottema/simple-java-mail/issues/699)**
 
+## Executable reference implementation
+
+Start with the [demo project](smtp-connection-pool-demo/README.md), not the diagrams. It turns the product model into five runnable integrations against a random-port dummy SMTP server:
+
+1. [direct pool ownership](smtp-connection-pool-demo/src/main/java/org/simplejavamail/smtpconnectionpool/demo/DirectPoolDemo.java), including forced disconnect, invalidation, and recovery;
+2. [Simple Java Mail](smtp-connection-pool-demo/src/main/java/org/simplejavamail/smtpconnectionpool/demo/SimpleJavaMailDemo.java) as the higher-level reference consumer of path 1;
+3. [plain Jakarta Mail](smtp-connection-pool-demo/src/main/java/org/simplejavamail/smtpconnectionpool/demo/JakartaMailDemo.java), [Spring](smtp-connection-pool-demo/src/main/java/org/simplejavamail/smtpconnectionpool/demo/SpringDemo.java), and [Camel](smtp-connection-pool-demo/src/main/java/org/simplejavamail/smtpconnectionpool/demo/CamelDemo.java) as path-3 variants.
+
+The smoke tests assert delivered messages, accepted physical sessions, reuse, and zero active sessions after shutdown. The demo is compiled and tested with the reactor but excluded from Maven Central, so the published product remains three runtime artifacts.
+
+There is intentionally no standalone path-2 demo before Simple Java Mail 10.0.0 releases the public facade from #698. The Simple Java Mail 9.2.0 example includes `batch-module` only as internal support for its high-level `Mailer` and never calls an internal batch API. Once the supported path-2 API exists, its canonical runnable example will be added to this demo project and linked from the Simple Java Mail website.
+
 ## Product promise
 
 `smtp-connection-pool` supports both kinds of consumers:
@@ -65,13 +77,7 @@ The repository is a version-aligned Maven reactor while preserving the existing 
 
 The `jakarta-provider` name is deliberate: Jakarta Mail owns the SPI contract; this artifact supplies an implementation of it. The Camel artifact is selection glue over that provider, not a second mail-provider SPI.
 
-Simple Java Mail's existing `batch-module` remains in the Simple Java Mail repository. It is path 2, not a fourth module in this repository.
-
-This repository additionally owns a reactor-only `smtp-connection-pool-demo` project. It is compiled and smoke-tested in CI but excluded from Maven Central, so the published product remains the three runtime artifacts above. The demo order is direct integration first, Simple Java Mail second as the higher-level reference consumer of path 1, then plain Jakarta Mail, Spring, and Camel as path-3 variants.
-
-Each demo uses a random-port dummy SMTP server and asserts delivered messages, accepted physical sessions, reuse, and zero active sessions after owner shutdown. The direct demo also forces a connection failure and proves that invalidation causes a replacement connection on the next send. The Simple Java Mail 9.2.0 demo includes `batch-module` only because the high-level Mailer uses it internally; it never calls an internal batch API.
-
-There is intentionally no standalone path-2 demo before Simple Java Mail 10.0.0 releases the public facade from #698. Once that supported API exists, its example will be added here, where all three product paths remain visible together. Simple Java Mail's website may explain and link to these canonical runnable sources rather than maintaining a divergent copy.
+Simple Java Mail's existing `batch-module` remains in the Simple Java Mail repository. It is path 2, not a fourth module in this repository. The reactor-only demo project described above is executable documentation rather than a published product artifact.
 
 The root POM becomes an aggregator/parent. The core child retains the existing `org.simplejavamail:smtp-connection-pool` GAV so current consumers do not change dependency coordinates. All artifacts released from this repository use the same version and tag. A SemVer-minor release also requires binary compatibility with `3.1.0`, not only source compatibility.
 

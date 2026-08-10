@@ -2,6 +2,8 @@
 
 This repository follows the orchestration in Simple Java Mail's [maintainer workflow](https://github.com/bbottema/simple-java-mail/blob/master/MAINTAINER_WORKFLOW.md), adapted to a supporting-library reactor. This file is the authoritative local guide; `how to release.txt` is retained only as a pointer for old bookmarks.
 
+The [real-server demo suite](smtp-connection-pool-demo/README.md) is executable release evidence, not ancillary sample code. It must remain prominent in user documentation, pass with the reactor, and stay excluded from published coordinates.
+
 ## Authorization boundary
 
 Preparing code, release notes, a milestone, and a draft release plan does not authorize publication. Do not push release commits, approve a CircleCI deployment lane, create or move tags, publish artifacts, or create the final GitHub release without explicit maintainer approval for that release.

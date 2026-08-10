@@ -1,0 +1,1 @@
+protocol=test-smtp; type=transport; class=org.simplejavamail.smtpconnectionpool.camel.SmtpPoolCamelIntegrationTest$FakeTransport; vendor=tests;

@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+		 xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+		 xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+
+	<parent>
+		<groupId>org.simplejavamail</groupId>
+		<artifactId>smtp-connection-pool-parent</artifactId>
+		<version>3.1.0</version>
+	</parent>
+
+	<artifactId>smtp-connection-pool</artifactId>
+	<packaging>jar</packaging>
+	<name>SMTP Connection Pool</name>
+	<description>Lightweight SMTP connection pool with clustering support and explicit lease lifecycle.</description>
+
+	<dependencies>
+		<dependency>
+			<groupId>jakarta.mail</groupId>
+			<artifactId>jakarta.mail-api</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>com.github.bbottema</groupId>
+			<artifactId>clustered-object-pool</artifactId>
+		</dependency>
+	</dependencies>
+
+	<build>
+		<plugins>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-antrun-plugin</artifactId>
+				<version>3.1.0</version>
+				<executions>
+					<execution>
+						<id>fetch-released-core-compatibility-baseline</id>
+						<phase>prepare-package</phase>
+						<goals>
+							<goal>run</goal>
+						</goals>
+						<configuration>
+							<target>
+								<mkdir dir="${project.build.directory}/compatibility-baseline" />
+								<get src="https://repo.maven.apache.org/maven2/org/simplejavamail/smtp-connection-pool/${core.compatibility.version}/smtp-connection-pool-${core.compatibility.version}.jar"
+									 dest="${project.build.directory}/compatibility-baseline/smtp-connection-pool-${core.compatibility.version}.jar"
+									 verbose="false" />
+								<checksum file="${project.build.directory}/compatibility-baseline/smtp-connection-pool-${core.compatibility.version}.jar"
+									 algorithm="SHA-256" property="releasedCoreSha256" />
+								<condition property="releasedCoreChecksumMatches">
+									<equals arg1="${releasedCoreSha256}"
+											arg2="${core.compatibility.sha256}"
+											casesensitive="false" />
+								</condition>
+								<fail unless="releasedCoreChecksumMatches"
+									  message="The downloaded smtp-connection-pool compatibility baseline has an unexpected SHA-256 checksum." />
+							</target>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
+			<plugin>
+				<groupId>com.github.siom79.japicmp</groupId>
+				<artifactId>japicmp-maven-plugin</artifactId>
+				<version>0.25.7</version>
+				<executions>
+					<execution>
+						<id>verify-core-binary-compatibility</id>
+						<phase>verify</phase>
+						<goals>
+							<goal>cmp</goal>
+						</goals>
+					</execution>
+				</executions>
+				<configuration>
+					<oldVersion>
+						<file>
+							<path>${project.build.directory}/compatibility-baseline/smtp-connection-pool-${core.compatibility.version}.jar</path>
+						</file>
+					</oldVersion>
+					<newVersion>
+						<file>
+							<path>${project.build.directory}/${project.build.finalName}.jar</path>
+						</file>
+					</newVersion>
+					<parameter>
+						<onlyModified>true</onlyModified>
+						<includeSynthetic>false</includeSynthetic>
+						<ignoreMissingClasses>false</ignoreMissingClasses>
+						<breakBuildOnBinaryIncompatibleModifications>true</breakBuildOnBinaryIncompatibleModifications>
+						<breakBuildOnSourceIncompatibleModifications>false</breakBuildOnSourceIncompatibleModifications>
+					</parameter>
+				</configuration>
+			</plugin>
+		</plugins>
+	</build>
+</project>

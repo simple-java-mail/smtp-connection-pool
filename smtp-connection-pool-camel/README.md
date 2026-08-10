@@ -1,0 +1,41 @@
+# Camel Mail adapter
+
+This optional module makes Camel Mail select the `smtppool` Jakarta Mail facade. It contains no pool registry, allocator, delegate resolver, or independent failure policy; those stay in `smtp-connection-pool-jakarta-provider`.
+
+It targets Camel Mail `4.21.x` and Java 17. It is implemented for the proposed `3.2.0` release and is not present in the currently published `3.1.0` release.
+
+## Setup
+
+```xml
+<dependency>
+    <groupId>org.simplejavamail</groupId>
+    <artifactId>smtp-connection-pool-camel</artifactId>
+    <version>3.2.0</version><!-- once published -->
+</dependency>
+```
+
+The module registers two Camel component schemes:
+
+- `smtppool:` keeps Camel's normal `smtp` configuration as the physical delegate.
+- `smtppools:` keeps Camel's normal `smtps` configuration as the physical delegate.
+
+```java
+from("direct:mail")
+    .to("smtppool://smtp.example.com:587"
+            + "?username=user&password=secret"
+            + "&from=sender@example.com&to=recipient@example.com");
+```
+
+All ordinary Camel Mail endpoint options are delegated to Camel's own configuration and generated property configurers. The adapter changes only the protocol used by `DefaultJavaMailSender.getTransport(Session)`.
+
+To select a custom physical provider protocol, pass the normal provider property:
+
+```java
+to("smtppool://smtp.example.com:2525"
+        + "?mail.smtppool.delegate.protocol=custom-smtp"
+        + "&username=user&password=secret&to=recipient@example.com");
+```
+
+Internally created Jakarta Mail Sessions are tracked and shut down gracefully when the Camel component stops. If an externally supplied Session is used, its owner must call `SmtpPoolRegistry.shutdown(session)`.
+
+Ordinary Camel `smtp:`/`smtps:` components and ordinary Jakarta Mail `session.getTransport("smtp")` lookups are untouched. This adapter never registers `PooledTransport` under `smtp` and never spoofs the physical provider procurement mechanism.

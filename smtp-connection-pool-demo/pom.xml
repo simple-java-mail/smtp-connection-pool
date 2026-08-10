@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+		 xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+		 xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+
+	<parent>
+		<groupId>org.simplejavamail</groupId>
+		<artifactId>smtp-connection-pool-parent</artifactId>
+		<version>3.1.0</version>
+	</parent>
+
+	<artifactId>smtp-connection-pool-demo</artifactId>
+	<packaging>jar</packaging>
+	<name>SMTP Connection Pool :: Executable Demos</name>
+	<description>Non-published, executable demonstrations of the supported SMTP connection-pool usage paths.</description>
+
+	<properties>
+		<automaticModuleName>org.simplejavamail.smtpconnectionpool.demo</automaticModuleName>
+		<java.version>17</java.version>
+		<maven.compiler.release>17</maven.compiler.release>
+		<maven.deploy.skip>true</maven.deploy.skip>
+		<maven.javadoc.skip>true</maven.javadoc.skip>
+	</properties>
+
+	<dependencies>
+		<dependency>
+			<groupId>org.simplejavamail</groupId>
+			<artifactId>smtp-connection-pool</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.simplejavamail</groupId>
+			<artifactId>smtp-connection-pool-jakarta-provider</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.simplejavamail</groupId>
+			<artifactId>smtp-connection-pool-camel</artifactId>
+		</dependency>
+
+		<!-- Simple Java Mail is the higher-level path-1 consumer demonstrated after direct pool use. -->
+		<dependency>
+			<groupId>org.simplejavamail</groupId>
+			<artifactId>simple-java-mail</artifactId>
+		</dependency>
+		<!-- Used internally by Simple Java Mail 9.2.0; the unsupported standalone API is never called here. -->
+		<dependency>
+			<groupId>org.simplejavamail</groupId>
+			<artifactId>batch-module</artifactId>
+		</dependency>
+
+		<dependency>
+			<groupId>org.eclipse.angus</groupId>
+			<artifactId>angus-mail</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework</groupId>
+			<artifactId>spring-context-support</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.camel</groupId>
+			<artifactId>camel-core</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>com.github.davidmoten</groupId>
+			<artifactId>subethasmtp</artifactId>
+		</dependency>
+	</dependencies>
+</project>

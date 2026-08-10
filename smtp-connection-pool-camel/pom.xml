@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+		 xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+		 xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+
+	<parent>
+		<groupId>org.simplejavamail</groupId>
+		<artifactId>smtp-connection-pool-parent</artifactId>
+		<version>3.1.0</version>
+	</parent>
+
+	<artifactId>smtp-connection-pool-camel</artifactId>
+	<packaging>jar</packaging>
+	<name>SMTP Connection Pool :: Camel Adapter</name>
+	<description>Camel Mail selection adapter for the smtppool Jakarta Mail provider.</description>
+
+	<properties>
+		<automaticModuleName>org.simplejavamail.smtpconnectionpool.camel</automaticModuleName>
+		<java.version>17</java.version>
+		<maven.compiler.release>17</maven.compiler.release>
+	</properties>
+
+	<dependencies>
+		<dependency>
+			<groupId>org.simplejavamail</groupId>
+			<artifactId>smtp-connection-pool-jakarta-provider</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.camel</groupId>
+			<artifactId>camel-mail</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.jspecify</groupId>
+			<artifactId>jspecify</artifactId>
+			<scope>provided</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.camel</groupId>
+			<artifactId>camel-core</artifactId>
+			<scope>test</scope>
+		</dependency>
+	</dependencies>
+</project>

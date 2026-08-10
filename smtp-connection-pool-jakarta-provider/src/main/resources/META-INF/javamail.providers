@@ -1,0 +1,1 @@
+protocol=smtppool; type=transport; class=org.simplejavamail.smtpconnectionpool.jakarta.PooledTransport; vendor=Simple Java Mail;

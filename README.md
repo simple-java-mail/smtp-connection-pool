@@ -164,8 +164,13 @@ try {
     transport.close(); // releases a healthy lease; invalidates an unhealthy one
 }
 
-SmtpPoolRegistry.shutdown(session).get();
+Future<?> shutdown = SmtpPoolRegistry.shutdown(session); // graceful
+shutdown.get();
 ```
+
+Graceful shutdown stops new claims and waits for active leases. If a bounded wait expires, `shutdownNow(session)` invalidates active leases and returns the same completion handle, which completes only after physical `Transport.close()` calls finish. A Session can be reused only after that shutdown completes and `SmtpPoolRegistry.restart(session)` is called explicitly.
+
+When credentials or OAuth tokens rotate for the same endpoint, a new credential-isolated pool becomes current and the superseded pool drains. Its retained credential material is cleared as soon as its last active lease finishes; inactive credential generations do not accumulate.
 
 Spring uses the same provider by configuring `JavaMailSenderImpl` with protocol `smtppool`. Camel uses the separate adapter and `smtppool:` or `smtppools:` endpoint schemes:
 
@@ -192,7 +197,7 @@ Build the reactor with JDK 21 and Maven. Core and provider bytecode still target
 mvn clean verify
 ```
 
-Verification runs the core/provider/Camel tests, the real-server demo smoke tests, SpotBugs, Javadocs, and a checksum-pinned japicmp comparison with the published `3.1.0` core. The pinned CircleCI release orb also runs on JDK 21 and advances the parent and all children as one reactor while excluding the demo from publication.
+Verification runs the core/provider/Camel tests, the real-server demo smoke tests, SpotBugs, Javadocs, and a checksum-pinned japicmp comparison with the published `3.1.0` core. CircleCI also compiles and tests the core plus Jakarta provider on an actual JDK 8; its JDK 21 release lane advances the parent and all children as one reactor while excluding the demo from publication.
 
 ## Related custom transports
 
@@ -202,7 +207,7 @@ Verification runs the core/provider/Camel tests, the real-server demo smoke test
 
 Next release (proposed `3.2.0`)
 
-- [#10](https://github.com/simple-java-mail/smtp-connection-pool/issues/10): add the explicit lease API, optional `smtppool` Jakarta Mail provider, and separate Camel adapter while preserving the existing core coordinate and direct API.
+- [#10](https://github.com/simple-java-mail/smtp-connection-pool/issues/10): add the explicit lease API, optional `smtppool` Jakarta Mail provider, and separate Camel adapter while preserving the existing core coordinate and direct API. Harden credential rotation and graceful/forced shutdown using `generic-object-pool 2.4.1` and `clustered-object-pool 4.0.2`.
 
 `3.1.0` (7 August 2026)
 

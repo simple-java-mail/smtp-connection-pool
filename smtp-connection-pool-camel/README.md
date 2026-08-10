@@ -40,6 +40,6 @@ to("smtppool://smtp.example.com:2525"
         + "&username=user&password=secret&to=recipient@example.com");
 ```
 
-Internally created Jakarta Mail Sessions are tracked and shut down gracefully when the Camel component stops. If an externally supplied Session is used, its owner must call `SmtpPoolRegistry.shutdown(session)`.
+Internally created Jakarta Mail Sessions are tracked and shut down gracefully when the Camel component stops. Camel waits up to 30 seconds; on timeout or interruption it escalates to forced shutdown and also waits for physical cleanup before stop returns. If an externally supplied Session is used, its owner must call `SmtpPoolRegistry.shutdown(session)`.
 
 Ordinary Camel `smtp:`/`smtps:` components and ordinary Jakarta Mail `session.getTransport("smtp")` lookups are untouched. This adapter never registers `PooledTransport` under `smtp` and never spoofs the physical provider procurement mechanism.

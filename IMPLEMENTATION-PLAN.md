@@ -63,6 +63,7 @@ Downstream boundary:
 - [x] Keep all reactor artifacts on one version.
 - [x] Confirm the Java baseline for core and provider; keep Camel's Java/Camel constraints isolated in its own module.
 - [x] Document the JDK 21 build toolchain and update the inherited compiler, test, JaCoCo, SpotBugs, bundle, and Javadoc plugins so normal verification works without skipping static analysis.
+- [x] Add a separate CircleCI lane that compiles and tests core plus provider on an actual JDK 8, and keep build-time plugins used in that lane Java-8-runnable.
 - [x] Select Camel Mail `4.21.x` on Java 17 and record the compatibility matrix.
 - [x] Freeze the public `SmtpTransportLease` contract.
 - [x] Freeze the provider properties and APIs for hybrid protocol-or-`Provider`/resolver selection, pool sizing, claim timeout, expiry, ownership, and shutdown.
@@ -74,7 +75,7 @@ Downstream boundary:
 
 Exit criterion: the API/configuration review cannot alter the three product paths, their lifecycle ownership, arbitrary explicit real-provider lookup, or the single-pooling-owner boundary defined in the product vision.
 
-## Phase 1: add the shared core lease
+## Phase 1: add the exclusive core lease
 
 - [x] Introduce a public SMTP-specific lease around `PoolableObject<SessionTransport>`.
 - [x] Expose the real `Session`, `SessionTransport`, and connected `Transport` through the lease.
@@ -108,8 +109,10 @@ Tests:
 - [x] Make `isConnected`, reconnect-after-close, and `close` conform to generation-scoped Jakarta Mail expectations and serialize send/close/reconnect races.
 - [x] Bridge delivered, not-delivered, and partially-delivered transport events on the facade without attaching borrower listeners to a reusable delegate.
 - [x] Implement both hybrid selection branches with validation, recursion rejection, and provider identity resolved before key construction.
-- [x] Implement provider-owned per-Session management plus per-Session/global shutdown. New claims are rejected immediately; graceful shutdown returns a `Future` that waits for leases, and forced shutdown invalidates them first. Callers choose their wait timeout.
-- [x] Use a weak global registry, detach managers, clear retained credential material after shutdown, and cover Session collection with a lifecycle/GC test.
+- [x] Implement provider-owned per-Session management plus per-Session/global shutdown. New claims are rejected immediately; graceful and forced calls share one `Future`, forced shutdown can escalate graceful shutdown by invalidating active leases, and completion waits for allocator deallocation and physical close.
+- [x] Keep the shutting-down manager installed until cleanup completes, reject late pool/manager registration, require explicit restart afterwards, and serialize claim/registration/shutdown races.
+- [x] Use a weak global registry, detach managers after completion, clear retained credential material, and cover Session collection with a lifecycle/GC test.
+- [x] Retire superseded credential generations per endpoint: stop new claims to the old pool, wait for its active leases, remove its pool record, and clear its credential material without retaining credential-bearing cluster keys.
 - [x] Allow a validated, explicitly injected manager for containers that own pool lifecycle.
 - [x] Keep the provider implementation-neutral and test it with a deterministic non-Angus `Transport`; the application supplies the physical provider at runtime.
 - [x] Pass the selected Session, effective connection inputs, and delegate-specific properties through without interpreting SMTP extension capabilities.
@@ -120,12 +123,12 @@ Tests:
 - provider-metadata and `ServiceLoader` discovery through a real Jakarta Mail implementation;
 - deterministic custom-protocol delegation with no concrete Angus type in provider code;
 - declarative protocol and programmatic `Provider`/resolver selection, provider-identity isolation, and pooled-provider recursion rejection;
-- explicit connection-input forwarding, credential rotation/isolation, and private/redacted connection identity;
+- explicit connection-input forwarding, credential rotation/isolation, bounded retired-pool/key retention, and private/redacted connection identity;
 - reconnect-after-close on one wrapper and reuse across wrappers;
 - disconnected/unknown failure invalidation, failed idle reconnect cleanup, and healthy partial-delivery reuse;
 - delivered, not-delivered, and partial listener delivery with no cross-borrower listener leakage;
 - maximum-pool exclusivity, claim timeout, and interruption preservation;
-- graceful shutdown with an active lease, new-claim rejection, explicit restart, forced test cleanup, and post-shutdown Session collection;
+- graceful shutdown with an active lease, escalation through the same `Future`, physical-close completion, late-registration rejection, explicit restart, and post-shutdown Session collection;
 - Spring bulk and separate-send reuse plus Camel success/failure/shutdown coverage in their integration phases.
 
 ## Phase 3: verify plain Jakarta Mail and Spring
@@ -147,6 +150,7 @@ Exit criterion: applications can opt in by configuration and standard Jakarta Ma
 - [x] Add a negative producer-route fixture proving ordinary Camel `smtp:` still uses Camel's normal component and Angus provider path.
 - [x] Pass endpoint connection/authentication settings through to `PooledTransport` without duplicating pool logic.
 - [x] Add real producer-route tests for success, physical reuse, failure/invalidation, and component-owned Session shutdown.
+- [x] On Camel stop timeout or interruption, escalate graceful shutdown to forced shutdown and wait for the shared cleanup handle before returning.
 - [x] Document the Camel `4.21.x`/Java 17 matrix and minimal route examples.
 
 Exit criterion: Camel reaches the same provider path through its adapter; the adapter contains selection glue only.
@@ -171,6 +175,8 @@ Exit criterion: Camel reaches the same provider path through its adapter; the ad
 
 Follow [RELEASING.md](RELEASING.md). In summary:
 
+- [x] Publish and verify `generic-object-pool 2.4.1`, whose shutdown future now includes allocator deallocation.
+- [x] Publish and verify `clustered-object-pool 4.0.2`, which depends on that fix, includes already-draining pools in aggregate shutdown, and forgets drained pool records.
 - [ ] Create/reuse milestone `3.2.0` only after a planned release date is known; set that date and leave the milestone description empty.
 - [ ] Assign issue #10 and every included PR/issue to the milestone.
 - [x] Verify the local candidate reactor with tests, Javadocs, SpotBugs, binary compatibility, artifact packaging, and the documented examples; repeat on the eventual reviewed release commit.
@@ -227,7 +233,8 @@ The upstream release is complete only when:
 - direct, plain Jakarta Mail, Spring, and Camel integration tests demonstrate connection reuse and correct failure disposal;
 - executable real-server demos demonstrate direct, high-level Simple Java Mail, plain Jakarta Mail, Spring, and Camel usage, while the unsupported pre-10.0.0 standalone batch path remains absent;
 - an alternate non-Angus Jakarta `Transport` fixture proves arbitrary delegate selection, provider isolation, standard exception/event propagation, and absence of nested pooling assumptions;
-- the recursion, credential-isolation, shutdown, and memory-retention risks have explicit tests;
+- the recursion, credential-isolation/rotation, shutdown/escalation, physical-close completion, and memory-retention risks have explicit tests;
+- the core and provider compile and test on JDK 8 independently of the JDK 21 full-reactor verification;
 - all published public APIs and properties are documented with available-version markers;
 - the parent and all three runtime artifacts are present in Maven Central under one version, while the reactor-only demo is absent;
 - GitHub issue, milestone, tag, release, and release-note records agree; and

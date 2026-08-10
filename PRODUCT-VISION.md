@@ -71,7 +71,7 @@ The repository is a version-aligned Maven reactor while preserving the existing 
 
 | Artifact | Responsibility | Dependencies |
 | --- | --- | --- |
-| `org.simplejavamail:smtp-connection-pool` | Existing direct API, physical connection pooling, and the shared transport-lease contract | Jakarta Mail API and clustered-object-pool |
+| `org.simplejavamail:smtp-connection-pool` | Existing direct API, physical connection pooling, and the exclusive transport-lease contract | Jakarta Mail API and clustered-object-pool |
 | `org.simplejavamail:smtp-connection-pool-jakarta-provider` | `smtppool` Jakarta Mail provider, configuration mapping, provider-owned pool registry, and explicit shutdown API | Core artifact; the application supplies a compatible physical Jakarta Mail `Transport` provider at runtime |
 | `org.simplejavamail:smtp-connection-pool-camel` | Camel-specific selection adapter; it must not globally replace Camel's normal `smtp` provider | Jakarta provider plus a declared/tested Camel line |
 
@@ -107,7 +107,7 @@ The provider artifact registers the custom transport protocol `smtppool` through
 | `close()` after healthy use | Release the lease |
 | `close()` after a connection/protocol failure | Invalidate the lease |
 
-The wrapper must preserve the host, port, username, password/authenticator outcome, and delegate selection supplied by Jakarta Mail or Spring. Pools are isolated by `Session` plus normalized delegate protocol and provider identity, host, effective/default port, username, and a private authentication identity or credential generation. Rotating from credential A to B must not borrow a connection authenticated as A, and switching between two providers for the same protocol must not cross-borrow. Raw passwords/tokens must not be used directly in equality, retained unnecessarily, logged, or exposed through `toString()`.
+The wrapper must preserve the host, port, username, password/authenticator outcome, and delegate selection supplied by Jakarta Mail or Spring. Pools are isolated by `Session` plus normalized delegate protocol and provider identity, host, effective/default port, username, and a private authentication identity or credential generation. Rotating from credential A to B must not borrow a connection authenticated as A: B becomes current immediately, while A drains only leases already in flight and is then removed. Switching between two providers for the same protocol must not cross-borrow. Raw passwords/tokens must not be used directly in equality, retained unnecessarily, logged, or exposed through `toString()`; retired credential material is cleared when that generation finishes draining.
 
 If claiming or connecting fails, `protocolConnect` removes and invalidates any partially installed lease before returning `false` or propagating a `MessagingException`; callers are not required to call `close()` after failed `connect()`. A blocking claim interrupted by shutdown or thread interruption preserves the thread's interrupt flag and is surfaced as a `MessagingException` with its cause. If `isConnected()` discovers a dead delegate, a later `connect()` invalidates the stale generation before claiming another.
 
@@ -115,7 +115,7 @@ Failure classification is centralized and transport-neutral; it must not depend 
 
 Each successful `connect()` creates a new lease generation. `close()` atomically detaches and terminates that generation once, calls the Jakarta `Service.close()` behavior in a `finally` path, and cannot race a send into returning a still-used transport. Repeated `close()` is harmless for the same generation; a later `connect()` after close is supported and starts a fresh generation.
 
-The provider owns pools by default and exposes deterministic per-`Session` and global shutdown. Graceful shutdown rejects new claims, lets active lease generations finish, and reports completion only after their physical transports close. Callers may time out while waiting on the returned `Future` and then invoke explicit forced shutdown to invalidate active leases. Claim, close, reconnect, and shutdown races have one observable outcome. Manager injection is available for applications that own lifecycle centrally. A shut-down Session remains closed to claims until an explicit registry restart.
+The provider owns pools by default and exposes deterministic per-`Session` and global shutdown. Graceful shutdown rejects new claims, lets active lease generations finish, and reports completion only after their physical transports close. Callers may time out while waiting and escalate through forced shutdown, which invalidates active leases and returns the same lifecycle `Future`. The Session keeps its shutting-down manager registered until that handle finishes, so escalation cannot accidentally target an empty replacement manager. Claim, manager installation, close, reconnect, and shutdown races have one observable outcome. Manager injection is available for applications that own lifecycle centrally. A shut-down Session remains closed to claims until cleanup finishes and an explicit registry restart occurs.
 
 ### Locked hybrid delegate selection
 
@@ -214,7 +214,7 @@ The direct API and provider facade share the core implementation while retaining
 ```mermaid
 flowchart TB
     subgraph DIRECT["Path 1: direct integration"]
-        DIRECT_APP["Application or Simple Java Mail"] --> DIRECT_CLAIM["Claim shared transport lease"]
+        DIRECT_APP["Application or Simple Java Mail"] --> DIRECT_CLAIM["Claim exclusive transport lease"]
         DIRECT_CLAIM --> DIRECT_POOL["Caller-owned pool"]
         DIRECT_POOL --> DIRECT_SEND["Use real Transport"]
         DIRECT_SEND --> DIRECT_RESULT{"Outcome"}
@@ -247,7 +247,7 @@ flowchart TB
 
 ### 4. Simple Java Mail remains a direct integration (downstream update)
 
-Simple Java Mail keeps the richer lifecycle that a generic provider would hide. Its adoption of the shared lease contract belongs to downstream issue #698 after this release is published.
+Simple Java Mail keeps the richer lifecycle that a generic provider would hide. Its adoption of the exclusive lease contract belongs to downstream issue #698 after this release is published.
 
 ```mermaid
 flowchart TB
@@ -256,7 +256,7 @@ flowchart TB
     FEATURES --> RUNNER["TransportRunner"]
     RUNNER --> BATCH{"Batch module enabled?"}
     BATCH -- "No" --> DIRECT_TRANSPORT["Open, use, and close a normal Transport"]
-    BATCH -- "Yes" --> ACQUIRE["Acquire shared SMTP transport lease"]
+    BATCH -- "Yes" --> ACQUIRE["Acquire exclusive SMTP transport lease"]
     ACQUIRE --> CLUSTERED["SmtpConnectionPoolClustered"]
     CLUSTERED --> REAL["Real Session and physical Transport"]
     REAL --> OPERATION["TransportRunner sends or tests connection"]
@@ -278,7 +278,7 @@ flowchart TB
     CONFIG --> REGISTER["Register cluster key and Jakarta Mail Session"]
     REGISTER --> CALLBACK["Run cluster-selected or session-sticky callback"]
     EXECUTOR --> CALLBACK
-    CALLBACK --> INTERNAL["Facade acquires shared SMTP transport lease"]
+    CALLBACK --> INTERNAL["Facade acquires exclusive SMTP transport lease"]
     INTERNAL --> CONTEXT["Callback receives selected Session and Transport"]
     CONTEXT --> WORK["Application creates MimeMessage and invokes sendMessage(...)"]
     WORK --> RESULT{"Callback outcome"}

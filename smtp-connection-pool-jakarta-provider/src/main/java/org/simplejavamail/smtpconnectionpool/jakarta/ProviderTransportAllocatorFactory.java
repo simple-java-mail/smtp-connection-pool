@@ -12,7 +12,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 final class ProviderTransportAllocatorFactory
-        implements AllocatorFactory<ConnectionPoolKey, ConnectionPoolKey, SessionTransport> {
+        implements AllocatorFactory<String, ConnectionPoolKey, SessionTransport> {
     private final Session session;
     private final ConcurrentMap<Transport, MessagingException> reuseFailures =
             new ConcurrentHashMap<Transport, MessagingException>();
@@ -23,7 +23,7 @@ final class ProviderTransportAllocatorFactory
 
     @Override
     public Allocator<SessionTransport> create(
-            final ResourceKey<ConnectionPoolKey, ConnectionPoolKey> resourceKey) {
+            final ResourceKey<String, ConnectionPoolKey> resourceKey) {
         return new ProviderTransportAllocator(session, resourceKey.getPoolKey(), reuseFailures);
     }
 

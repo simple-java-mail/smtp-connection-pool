@@ -93,7 +93,7 @@ The resolver branch takes precedence over a configured `Provider`, which takes p
 
 Provider and resolver values are objects placed with `Properties.put`, not strings loaded from a properties file.
 
-Endpoint identity includes the Session-scoped manager, normalized delegate protocol and resolved provider metadata, host, effective port, username, and an HMAC credential fingerprint. Raw passwords/tokens are excluded from equality and `toString`, retained only while needed for reconnect/allocation, and cleared after shutdown completes.
+Endpoint identity includes the Session-scoped manager, normalized delegate protocol and resolved provider metadata, host, effective port, username, and an HMAC credential fingerprint. Raw passwords/tokens are excluded from equality and `toString` and retained only while needed for reconnect/allocation. When credentials rotate, the new generation becomes current immediately; the superseded pool accepts no new claims, drains existing leases, and then clears its credential material and retained pool record. Remaining material is cleared on Session-pool shutdown.
 
 Passwords supplied by Jakarta Mail and saved Session authentication are fingerprinted automatically. The core OAuth token supplier is resolved for each facade `connect` so token rotation creates a separate identity. If a custom authenticator rotates credentials without exposing the effective password to the facade, update `mail.smtppool.credential.identity` with its generation/version.
 
@@ -111,7 +111,9 @@ SmtpPoolRegistry.shutdownNow(session).get();  // force: invalidate active leases
 SmtpPoolRegistry.shutdownAll();               // starts all registry-owned shutdowns; does not wait
 ```
 
-Shutdown marks a Session closed to new pool claims. If a deliberately reconfigured Session must be used again after shutdown has completed, call `SmtpPoolRegistry.restart(session)` first.
+Shutdown marks a Session closed to new pool claims. A later `shutdownNow(session)` escalates an in-progress graceful shutdown, invalidates active leases, and returns the same `Future`. That handle completes only after allocator deallocation—including each physical `Transport.close()`—has finished. The manager remains registered during cleanup so escalation cannot create or target a replacement lifecycle.
+
+If a deliberately reconfigured Session must be used again, wait for shutdown completion and then call `SmtpPoolRegistry.restart(session)` explicitly. Installing a shutting-down manager or restarting while one is still registered is rejected.
 
 `PooledTransport.close()` ends one lease generation; it does not shut down the Session's pool. Applications and containers must invoke a registry shutdown hook.
 

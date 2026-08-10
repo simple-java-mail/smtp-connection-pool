@@ -17,7 +17,7 @@ public final class SmtpPoolProperties {
     public static final String DELEGATE_PROVIDER = "mail.smtppool.delegate.provider";
     /** Object property containing an {@link SmtpDelegateProviderResolver}. */
     public static final String DELEGATE_PROVIDER_RESOLVER = "mail.smtppool.delegate.provider-resolver";
-    /** Optional credential generation identity used in addition to the effective password or token. */
+    /** Optional credential generation/version identity used in addition to the effective password or token. */
     public static final String CREDENTIAL_IDENTITY = "mail.smtppool.credential.identity";
     /** Object property containing the Session-scoped {@link SmtpPoolManager}. */
     public static final String MANAGER = "mail.smtppool.manager";
@@ -67,12 +67,20 @@ public final class SmtpPoolProperties {
         if (manager.getSession() != session) {
             throw new IllegalArgumentException("The SmtpPoolManager belongs to a different Session");
         }
+        if (manager.isShuttingDown()) {
+            throw new IllegalStateException("Cannot install an SmtpPoolManager that is shutting down");
+        }
         synchronized (session.getProperties()) {
+            if (manager.isShuttingDown()) {
+                throw new IllegalStateException("Cannot install an SmtpPoolManager that is shutting down");
+            }
+            if (Boolean.TRUE.equals(session.getProperties().get(REGISTRY_SHUTDOWN))) {
+                throw new IllegalStateException("The Session's previous smtppool lifecycle must complete and be restarted first");
+            }
             final Object existing = session.getProperties().get(MANAGER);
             if (existing != null && existing != manager) {
                 throw new IllegalStateException("The Session already has a different smtppool manager");
             }
-            session.getProperties().remove(REGISTRY_SHUTDOWN);
             session.getProperties().put(MANAGER, manager);
         }
     }

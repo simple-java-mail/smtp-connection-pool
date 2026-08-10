@@ -9,35 +9,28 @@ import java.nio.CharBuffer;
 import java.nio.charset.StandardCharsets;
 import java.security.GeneralSecurityException;
 import java.util.Arrays;
-import java.util.Locale;
-import java.util.Objects;
 
 /** Private connection identity. Its string form deliberately omits all credential material. */
 final class ConnectionPoolKey {
-    private final String delegateProtocol;
+    private final ConnectionEndpoint endpoint;
     private final Provider provider;
-    private final String providerIdentity;
-    private final String host;
-    private final int port;
-    private final String user;
     private final byte[] credentialFingerprint;
     private final char[] password;
+    private final int stableHashCode;
+    private volatile boolean credentialMaterialCleared;
 
     ConnectionPoolKey(final String delegateProtocol, final Provider provider, final String host, final int port,
                       final String user, final String password, final Object credentialIdentity,
                       final byte[] fingerprintKey) throws GeneralSecurityException {
-        this.delegateProtocol = normalize(delegateProtocol);
+        this.endpoint = new ConnectionEndpoint(delegateProtocol, provider, host, port, user);
         this.provider = provider;
-        this.providerIdentity = providerIdentity(provider);
-        this.host = host == null ? "" : host.trim().toLowerCase(Locale.ROOT);
-        this.port = port;
-        this.user = user;
         this.password = password == null ? null : password.toCharArray();
         this.credentialFingerprint = fingerprint(password, credentialIdentity, fingerprintKey);
+        this.stableHashCode = 31 * endpoint.hashCode() + Arrays.hashCode(credentialFingerprint);
     }
 
     String getDelegateProtocol() {
-        return delegateProtocol;
+        return endpoint.getDelegateProtocol();
     }
 
     Provider getProvider() {
@@ -45,25 +38,31 @@ final class ConnectionPoolKey {
     }
 
     String getHost() {
-        return host.isEmpty() ? null : host;
+        return endpoint.getHost();
     }
 
     int getPort() {
-        return port;
+        return endpoint.getPort();
     }
 
     String getUser() {
-        return user;
+        return endpoint.getUser();
+    }
+
+    ConnectionEndpoint getEndpoint() {
+        return endpoint;
     }
 
     String copyPassword() {
         return password == null ? null : new String(password);
     }
 
-    void clearPassword() {
+    void clearCredentialMaterial() {
+        credentialMaterialCleared = true;
         if (password != null) {
             Arrays.fill(password, '\0');
         }
+        Arrays.fill(credentialFingerprint, (byte) 0);
     }
 
     private static byte[] fingerprint(final String password, final Object identity, final byte[] fingerprintKey)
@@ -82,15 +81,6 @@ final class ConnectionPoolKey {
         return mac.doFinal();
     }
 
-    private static String providerIdentity(final Provider provider) {
-        return normalize(provider.getProtocol()) + '|' + provider.getClassName() + '|' +
-                String.valueOf(provider.getVendor()) + '|' + String.valueOf(provider.getVersion());
-    }
-
-    private static String normalize(final String protocol) {
-        return protocol == null ? "" : protocol.trim().toLowerCase(Locale.ROOT);
-    }
-
     @Override
     public boolean equals(final Object other) {
         if (this == other) {
@@ -100,21 +90,19 @@ final class ConnectionPoolKey {
             return false;
         }
         final ConnectionPoolKey that = (ConnectionPoolKey) other;
-        return port == that.port && delegateProtocol.equals(that.delegateProtocol) &&
-                providerIdentity.equals(that.providerIdentity) && host.equals(that.host) &&
-                Objects.equals(user, that.user) && Arrays.equals(credentialFingerprint, that.credentialFingerprint);
+        if (credentialMaterialCleared || that.credentialMaterialCleared) {
+            return false;
+        }
+        return endpoint.equals(that.endpoint) && Arrays.equals(credentialFingerprint, that.credentialFingerprint);
     }
 
     @Override
     public int hashCode() {
-        int result = Objects.hash(delegateProtocol, providerIdentity, host, port, user);
-        result = 31 * result + Arrays.hashCode(credentialFingerprint);
-        return result;
+        return stableHashCode;
     }
 
     @Override
     public String toString() {
-        return "ConnectionPoolKey(protocol=" + delegateProtocol + ", provider=" + providerIdentity +
-                ", host=" + host + ", port=" + port + ", user=" + user + ", credential=<private>)";
+        return "ConnectionPoolKey(endpoint=" + endpoint + ", credential=<private>)";
     }
 }

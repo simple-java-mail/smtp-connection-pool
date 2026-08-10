@@ -17,6 +17,7 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
@@ -93,26 +94,24 @@ public class SmtpPoolMailComponent extends MailComponent {
                 try {
                     SmtpPoolRegistry.shutdown(session).get(30, TimeUnit.SECONDS);
                 } catch (TimeoutException timeout) {
-                    SmtpPoolRegistry.shutdownNow(session);
-                    if (stopFailure == null) {
-                        stopFailure = timeout;
-                    } else {
-                        stopFailure.addSuppressed(timeout);
+                    final Exception forcedFailure = forceShutdownAndWait(session);
+                    if (forcedFailure != null) {
+                        timeout.addSuppressed(forcedFailure);
                     }
+                    stopFailure = appendFailure(stopFailure, timeout);
                 } catch (InterruptedException interrupted) {
+                    final Exception forcedFailure = forceShutdownAndWait(session);
+                    if (forcedFailure != null) {
+                        interrupted.addSuppressed(forcedFailure);
+                    }
                     Thread.currentThread().interrupt();
-                    SmtpPoolRegistry.shutdownNow(session);
-                    if (stopFailure == null) {
-                        stopFailure = interrupted;
-                    } else {
-                        stopFailure.addSuppressed(interrupted);
-                    }
+                    stopFailure = appendFailure(stopFailure, interrupted);
                 } catch (Exception failure) {
-                    if (stopFailure == null) {
-                        stopFailure = failure;
-                    } else {
-                        stopFailure.addSuppressed(failure);
+                    final Exception forcedFailure = forceShutdownAndWait(session);
+                    if (forcedFailure != null) {
+                        failure.addSuppressed(forcedFailure);
                     }
+                    stopFailure = appendFailure(stopFailure, failure);
                 }
             }
             ownedSessions.clear();
@@ -120,6 +119,40 @@ public class SmtpPoolMailComponent extends MailComponent {
         if (stopFailure != null) {
             throw stopFailure;
         }
+    }
+
+    private static Exception forceShutdownAndWait(final Session session) {
+        boolean interrupted = false;
+        try {
+            final Future<?> forced = SmtpPoolRegistry.shutdownNow(session);
+            final long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(30);
+            while (true) {
+                final long remaining = deadline - System.nanoTime();
+                if (remaining <= 0) {
+                    return new TimeoutException("Forced smtppool shutdown did not complete within 30 seconds");
+                }
+                try {
+                    forced.get(remaining, TimeUnit.NANOSECONDS);
+                    return null;
+                } catch (InterruptedException ignored) {
+                    interrupted = true;
+                }
+            }
+        } catch (Exception failure) {
+            return failure;
+        } finally {
+            if (interrupted) {
+                Thread.currentThread().interrupt();
+            }
+        }
+    }
+
+    private static Exception appendFailure(final Exception existing, final Exception addition) {
+        if (existing == null) {
+            return addition;
+        }
+        existing.addSuppressed(addition);
+        return existing;
     }
 
     private void installConfiguration(final SmtpPoolMailConfiguration configuration) {

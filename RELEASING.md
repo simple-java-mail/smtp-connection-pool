@@ -34,15 +34,17 @@ Do not create a due-date-free milestone merely to reserve a version. If the date
 
 ## 2. Prepare and verify
 
-1. Update `RELEASE.txt`, the README release-note summary, Javadocs, and directly relevant usage examples.
-2. Keep the current released version accurate; add a separate next-release section rather than relabeling an already published version as unreleased.
-3. Run the full reactor verification on the documented build JDK, without skipping static analysis, including provider discovery and all framework integration tests.
-4. Confirm the core artifact retains `org.simplejavamail:smtp-connection-pool` and that the three runtime JARs plus their technical parent POM will be deployed. The `smtp-connection-pool-demo` module must build and test but must not be published.
-5. Compare the core API and artifact/module metadata with the preceding release using the checksum-pinned binary-compatibility check. Update `core.compatibility.version` and `core.compatibility.sha256` only when preparing the next release line.
-6. Inspect the effective POM for every module and run `mvn -s .circleci/maven-central-settings.xml clean deploy -DskipPublishing=true` as a non-publishing deploy-lifecycle rehearsal. `skipPublishing` deliberately prevents Central staging and upload; inspect the locally installed parent POM, all three runtime JAR/source/Javadoc sets, and the demo's build/test output instead. Confirm separately that the CircleCI orb's version rewrite keeps parent and child versions aligned; change the pipeline before release if it does not.
-7. Rehearse or inspect Central bundle creation closely enough to prove that the parent and three runtime coordinates are included and `smtp-connection-pool-demo` is excluded. Do not discover an accidental demo publication after approval.
-8. Confirm the working tree contains only intended release changes.
-9. Merge the reviewed implementation to `master` and allow the JDK 21 CircleCI build-and-test job to finish.
+1. Verify that `generic-object-pool 2.4.1` and `clustered-object-pool 4.0.2` are published in Maven Central. These versions define the shutdown-completion and retired-pool cleanup semantics used by the provider; do not release against local-only substitutes.
+2. Update `RELEASE.txt`, the README release-note summary, Javadocs, and directly relevant usage examples.
+3. Keep the current released version accurate; add a separate next-release section rather than relabeling an already published version as unreleased.
+4. Run the full reactor verification on JDK 21, without skipping static analysis, including provider discovery and all framework integration tests.
+5. Run `mvn -pl smtp-connection-pool-jakarta-provider -am clean test -Djacoco.skip=true -Dlicense.skip=true` on an actual JDK 8. This is a baseline compilation/test gate for core and provider; the Java-17 Camel/demo modules remain in the JDK-21 reactor lane.
+6. Confirm the core artifact retains `org.simplejavamail:smtp-connection-pool` and that the three runtime JARs plus their technical parent POM will be deployed. The `smtp-connection-pool-demo` module must build and test but must not be published.
+7. Compare the core API and artifact/module metadata with the preceding release using the checksum-pinned binary-compatibility check. Update `core.compatibility.version` and `core.compatibility.sha256` only when preparing the next release line.
+8. Inspect the effective POM for every module and run `mvn -s .circleci/maven-central-settings.xml clean deploy -DskipPublishing=true` as a non-publishing deploy-lifecycle rehearsal. `skipPublishing` deliberately prevents Central staging and upload; inspect the locally installed parent POM, all three runtime JAR/source/Javadoc sets, and the demo's build/test output instead. Confirm separately that the CircleCI orb's version rewrite keeps parent and child versions aligned; change the pipeline before release if it does not.
+9. Rehearse or inspect Central bundle creation closely enough to prove that the parent and three runtime coordinates are included and `smtp-connection-pool-demo` is excluded. Do not discover an accidental demo publication after approval.
+10. Confirm the working tree contains only intended release changes.
+11. Merge the reviewed implementation to `master` and allow both the JDK 21 full-reactor and JDK 8 core/provider CircleCI jobs to finish.
 
 For the CI release path, do not pre-edit the POM to the desired release version. The `github-maven-deploy` CircleCI lane owns version bumping, deployment, the release commit, and the tag.
 
@@ -94,6 +96,7 @@ Supporting-library releases happen first.
 
 - Exact-version milestone contains every represented issue/PR.
 - Full reactor is verified and existing core compatibility is covered.
+- The published generic/clustered pool prerequisites are resolved from Maven Central, and the JDK 8 core/provider CI gate passes.
 - The multi-module version/deploy rehearsal proves that the CircleCI lane will publish the complete aligned reactor.
 - The real-server demo smoke tests pass, and the Central bundle excludes the demo coordinate.
 - Expected tag and all Maven Central artifacts are available.

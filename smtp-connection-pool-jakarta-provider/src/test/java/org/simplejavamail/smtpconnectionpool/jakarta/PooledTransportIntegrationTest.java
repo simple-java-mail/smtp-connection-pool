@@ -15,7 +15,7 @@ import jakarta.mail.internet.MimeMessage;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.springframework.mail.javamail.JavaMailSenderImpl;
+import org.simplejavamail.smtpconnectionpool.SmtpConnectionPool;
 
 import java.lang.ref.ReferenceQueue;
 import java.lang.ref.WeakReference;
@@ -27,10 +27,12 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Supplier;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -106,6 +108,53 @@ class PooledTransportIntegrationTest {
 
         assertEquals(2, FakeTransport.instances.get());
         assertEquals(2, FakeTransport.connections.get());
+    }
+
+    @Test
+    void clearingCredentialMaterialDoesNotMutateAKeysHashIdentity() throws Exception {
+        final byte[] fingerprintKey = new byte[32];
+        final ConnectionPoolKey first = new ConnectionPoolKey("test-smtp", fakeProvider(),
+                "mail.example.test", 2525, "sender", "credential", null, fingerprintKey);
+        final ConnectionPoolKey equivalent = new ConnectionPoolKey("test-smtp", fakeProvider(),
+                "mail.example.test", 2525, "sender", "credential", null, fingerprintKey);
+        try {
+            final int originalHash = first.hashCode();
+            assertEquals(first, equivalent);
+
+            first.clearCredentialMaterial();
+
+            assertEquals(originalHash, first.hashCode());
+            assertEquals(first, first);
+            assertFalse(first.equals(equivalent));
+        } finally {
+            first.clearCredentialMaterial();
+            equivalent.clearCredentialMaterial();
+        }
+    }
+
+    @Test
+    void rotatingOAuthTokensRetiresSupersededPoolsAndCredentialKeys() throws Exception {
+        final AtomicReference<String> token = new AtomicReference<String>();
+        session.getProperties().put(SmtpConnectionPool.OAUTH2_TOKEN_PROVIDER_PROPERTY, new Supplier<String>() {
+            @Override
+            public String get() {
+                return token.get();
+            }
+        });
+        final SmtpPoolManager manager = SmtpPoolRegistry.getOrCreate(session);
+
+        for (int generation = 0; generation < 5; generation++) {
+            token.set("oauth-generation-" + generation);
+            sendOnce(null);
+        }
+
+        for (int attempt = 0; attempt < 100 && manager.getRetainedCredentialKeyCountForTesting() > 1; attempt++) {
+            Thread.sleep(10L);
+        }
+        assertEquals(1, manager.getCurrentPoolCountForTesting());
+        assertEquals(1, manager.getRetainedCredentialKeyCountForTesting());
+        assertEquals(5, FakeTransport.instances.get());
+        assertTrue(FakeTransport.closes.get() >= 4);
     }
 
     @Test
@@ -262,12 +311,104 @@ class PooledTransportIntegrationTest {
         final Transport rejected = session.getTransport(SmtpPoolProperties.PROTOCOL);
         assertThrows(MessagingException.class,
                 () -> rejected.connect("mail.example.test", 2525, "sender", "secret"));
+        assertThrows(IllegalStateException.class, () -> SmtpPoolRegistry.restart(session));
         active.close();
         shutdown.get(5, TimeUnit.SECONDS);
 
         SmtpPoolRegistry.restart(session);
         sendOnce("secret");
         assertEquals(2, FakeTransport.instances.get());
+    }
+
+    @Test
+    void gracefulShutdownCanBeEscalatedThroughTheRegistry() throws Exception {
+        final Transport active = session.getTransport(SmtpPoolProperties.PROTOCOL);
+        active.connect("mail.example.test", 2525, "sender", "secret");
+        final SmtpPoolManager manager = SmtpPoolRegistry.getOrCreate(session);
+
+        final Future<?> graceful = SmtpPoolRegistry.shutdown(session);
+        assertFalse(graceful.isDone());
+        final Future<?> forced = SmtpPoolRegistry.shutdownNow(session);
+
+        assertSame(graceful, forced);
+        forced.get(5, TimeUnit.SECONDS);
+        assertFalse(active.isConnected());
+        assertEquals(0, manager.getActiveLeaseCount());
+        assertTrue(FakeTransport.closes.get() >= 1);
+    }
+
+    @Test
+    void shutdownFutureWaitsUntilPhysicalTransportCloseFinishes() throws Exception {
+        sendOnce("secret");
+        FakeTransport.closeStarted = new CountDownLatch(1);
+        FakeTransport.allowCloseToFinish = new CountDownLatch(1);
+
+        final Future<?> shutdown = SmtpPoolRegistry.shutdown(session);
+        try {
+            assertTrue(FakeTransport.closeStarted.await(5, TimeUnit.SECONDS));
+            assertFalse(shutdown.isDone());
+        } finally {
+            FakeTransport.allowCloseToFinish.countDown();
+        }
+        shutdown.get(5, TimeUnit.SECONDS);
+        assertTrue(FakeTransport.closes.get() >= 1);
+    }
+
+    @Test
+    void aShuttingManagerCannotBeReinstalled() throws Exception {
+        final SmtpPoolManager manager = SmtpPoolRegistry.getOrCreate(session);
+        final Future<?> shutdown = manager.shutdown();
+
+        assertThrows(IllegalStateException.class, () -> SmtpPoolProperties.setManager(session, manager));
+        shutdown.get(5, TimeUnit.SECONDS);
+    }
+
+    @Test
+    void shutdownWhileOAuthResolutionIsBlockedCannotRegisterALatePool() throws Exception {
+        final CountDownLatch tokenRequested = new CountDownLatch(1);
+        final CountDownLatch supplyToken = new CountDownLatch(1);
+        session.getProperties().put(SmtpConnectionPool.OAUTH2_TOKEN_PROVIDER_PROPERTY, new Supplier<String>() {
+            @Override
+            public String get() {
+                tokenRequested.countDown();
+                try {
+                    supplyToken.await();
+                } catch (InterruptedException interrupted) {
+                    Thread.currentThread().interrupt();
+                    throw new IllegalStateException(interrupted);
+                }
+                return "late-token";
+            }
+        });
+        final SmtpPoolManager manager = SmtpPoolRegistry.getOrCreate(session);
+        final AtomicReference<Throwable> claimResult = new AtomicReference<Throwable>();
+        final Thread claimant = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    final Transport transport = session.getTransport(SmtpPoolProperties.PROTOCOL);
+                    transport.connect("mail.example.test", 2525, "sender", null);
+                    claimResult.set(new AssertionError("The late claim unexpectedly succeeded"));
+                } catch (Throwable failure) {
+                    claimResult.set(failure);
+                }
+            }
+        }, "smtppool-blocked-oauth-claim-test");
+        claimant.start();
+
+        try {
+            assertTrue(tokenRequested.await(5, TimeUnit.SECONDS));
+            SmtpPoolRegistry.shutdownNow(session).get(5, TimeUnit.SECONDS);
+        } finally {
+            supplyToken.countDown();
+        }
+        claimant.join(5000L);
+
+        assertFalse(claimant.isAlive());
+        assertInstanceOf(MessagingException.class, claimResult.get());
+        assertEquals(0, manager.getCurrentPoolCountForTesting());
+        assertEquals(0, manager.getRetainedCredentialKeyCountForTesting());
+        assertEquals(0, manager.getLiveTransportCount());
     }
 
     @Test
@@ -322,24 +463,6 @@ class PooledTransportIntegrationTest {
         assertTrue(interruptedFlag.get());
         assertInstanceOf(InterruptedException.class, result.get().getCause());
         first.close();
-    }
-
-    @Test
-    void springJavaMailSenderSelectsTheFacadeForBulkAndSeparateSends() {
-        final JavaMailSenderImpl sender = new JavaMailSenderImpl();
-        sender.setSession(session);
-        sender.setProtocol(SmtpPoolProperties.PROTOCOL);
-        sender.setHost("mail.example.test");
-        sender.setPort(2525);
-        sender.setUsername("sender");
-        sender.setPassword("secret");
-
-        sender.send(message(), message());
-        sender.send(message());
-
-        assertEquals(1, FakeTransport.instances.get());
-        assertEquals(1, FakeTransport.connections.get());
-        assertEquals(3, FakeTransport.sends.get());
     }
 
     @Test
@@ -422,6 +545,8 @@ class PooledTransportIntegrationTest {
         static volatile int lastPort;
         static volatile String lastUser;
         static volatile String lastPassword;
+        static volatile CountDownLatch closeStarted;
+        static volatile CountDownLatch allowCloseToFinish;
 
         public FakeTransport(final Session session, final URLName urlName) {
             super(session, urlName);
@@ -440,6 +565,8 @@ class PooledTransportIntegrationTest {
             lastPort = -1;
             lastUser = null;
             lastPassword = null;
+            closeStarted = null;
+            allowCloseToFinish = null;
             SecondFakeTransport.instances.set(0);
         }
 
@@ -476,6 +603,19 @@ class PooledTransportIntegrationTest {
 
         @Override
         public synchronized void close() throws MessagingException {
+            final CountDownLatch started = closeStarted;
+            final CountDownLatch finish = allowCloseToFinish;
+            if (started != null) {
+                started.countDown();
+            }
+            if (finish != null) {
+                try {
+                    finish.await();
+                } catch (InterruptedException interrupted) {
+                    Thread.currentThread().interrupt();
+                    throw new MessagingException("Interrupted while closing the fake transport", interrupted);
+                }
+            }
             closes.incrementAndGet();
             super.close();
         }

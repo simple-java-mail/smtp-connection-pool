@@ -31,6 +31,9 @@ public final class SmtpPoolRegistry {
                 if (manager.getSession() != session) {
                     throw new IllegalStateException("The configured SmtpPoolManager belongs to a different Session");
                 }
+                if (manager.isShuttingDown()) {
+                    throw new IllegalStateException("The configured SmtpPoolManager is shutting down");
+                }
                 return manager;
             }
 
@@ -43,25 +46,20 @@ public final class SmtpPoolRegistry {
         }
     }
 
-    /** Starts graceful shutdown for one Session and returns a completion handle. */
+    /**
+     * Starts graceful shutdown for one Session and returns a handle that completes after physical cleanup finishes.
+     */
     public static Future<?> shutdown(final Session session) {
-        final SmtpPoolManager manager;
-        synchronized (session.getProperties()) {
-            session.getProperties().put(SmtpPoolProperties.REGISTRY_SHUTDOWN, Boolean.TRUE);
-            final Object existing = session.getProperties().remove(SmtpPoolProperties.MANAGER);
-            manager = existing instanceof SmtpPoolManager ? (SmtpPoolManager) existing : null;
-        }
+        final SmtpPoolManager manager = managerForShutdown(session);
         return manager == null ? CompletedFuture.INSTANCE : manager.shutdown();
     }
 
-    /** Invalidates active leases, starts shutdown for one Session, and returns a completion handle. */
+    /**
+     * Invalidates active leases and returns the Session's existing shutdown handle, or starts forced shutdown when
+     * shutdown had not begun yet.
+     */
     public static Future<?> shutdownNow(final Session session) {
-        final SmtpPoolManager manager;
-        synchronized (session.getProperties()) {
-            session.getProperties().put(SmtpPoolProperties.REGISTRY_SHUTDOWN, Boolean.TRUE);
-            final Object existing = session.getProperties().remove(SmtpPoolProperties.MANAGER);
-            manager = existing instanceof SmtpPoolManager ? (SmtpPoolManager) existing : null;
-        }
+        final SmtpPoolManager manager = managerForShutdown(session);
         return manager == null ? CompletedFuture.INSTANCE : manager.shutdownNow();
     }
 
@@ -73,27 +71,52 @@ public final class SmtpPoolRegistry {
         final ArrayList<SmtpPoolManager> snapshot;
         synchronized (MANAGERS) {
             snapshot = new ArrayList<SmtpPoolManager>(MANAGERS);
-            MANAGERS.clear();
         }
         for (SmtpPoolManager manager : snapshot) {
-            final Session session = manager.getSession();
-            synchronized (session.getProperties()) {
-                session.getProperties().put(SmtpPoolProperties.REGISTRY_SHUTDOWN, Boolean.TRUE);
-                if (session.getProperties().get(SmtpPoolProperties.MANAGER) == manager) {
-                    session.getProperties().remove(SmtpPoolProperties.MANAGER);
-                }
-            }
             manager.shutdown();
         }
     }
 
-    /** Allows a deliberately reconfigured Session to create a fresh manager after its previous shutdown completed. */
+    /**
+     * Allows a deliberately reconfigured Session to create a fresh manager after its previous shutdown completed.
+     * Restart is rejected while the old manager remains registered for cleanup or escalation.
+     */
     public static void restart(final Session session) {
         synchronized (session.getProperties()) {
             if (session.getProperties().containsKey(SmtpPoolProperties.MANAGER)) {
                 throw new IllegalStateException("Cannot restart smtppool while a manager is still registered");
             }
             session.getProperties().remove(SmtpPoolProperties.REGISTRY_SHUTDOWN);
+        }
+    }
+
+    static void managerShutdownCompleted(final SmtpPoolManager manager) {
+        final Session session = manager.getSession();
+        synchronized (session.getProperties()) {
+            if (session.getProperties().get(SmtpPoolProperties.MANAGER) == manager) {
+                session.getProperties().remove(SmtpPoolProperties.MANAGER);
+            }
+        }
+        synchronized (MANAGERS) {
+            MANAGERS.remove(manager);
+        }
+    }
+
+    private static SmtpPoolManager managerForShutdown(final Session session) {
+        synchronized (session.getProperties()) {
+            session.getProperties().put(SmtpPoolProperties.REGISTRY_SHUTDOWN, Boolean.TRUE);
+            final Object existing = session.getProperties().get(SmtpPoolProperties.MANAGER);
+            if (existing == null) {
+                return null;
+            }
+            if (!(existing instanceof SmtpPoolManager)) {
+                throw new IllegalStateException(SmtpPoolProperties.MANAGER + " must contain an SmtpPoolManager");
+            }
+            final SmtpPoolManager manager = (SmtpPoolManager) existing;
+            if (manager.getSession() != session) {
+                throw new IllegalStateException("The configured SmtpPoolManager belongs to a different Session");
+            }
+            return manager;
         }
     }
 

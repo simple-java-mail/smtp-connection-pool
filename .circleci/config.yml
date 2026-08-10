@@ -20,6 +20,17 @@ mvn-deploy-command: &mvn-deploy-command
     mvn com.mycila:license-maven-plugin:3.0:remove
   context: RELEASE_PROFILE_BBOTTEMA
 
+jobs:
+  java8-core-and-provider:
+    executor: java8-executor
+    steps:
+      - checkout
+      - restore_cache:
+          key: maven-github-release-{{ checksum ".circleci/config.yml" }}
+      - run:
+          name: Build and test core plus Jakarta provider on Java 8
+          command: mvn -pl smtp-connection-pool-jakarta-provider -am clean test -Djacoco.skip=true -Dlicense.skip=true
+
 workflows:
   workflow:
     jobs:
@@ -30,10 +41,7 @@ workflows:
             branches:
               only: master
 
-      - github-maven-deploy/build-and-test:
-          name: java8-core-and-provider
-          executor: java8-executor
-          mvn-build-test-command: mvn -pl smtp-connection-pool-jakarta-provider -am clean test -Djacoco.skip=true -Dlicense.skip=true
+      - java8-core-and-provider:
           filters:
             branches:
               only: master

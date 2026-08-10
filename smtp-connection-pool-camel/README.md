@@ -1,6 +1,6 @@
 # Camel Mail adapter
 
-This optional module makes Camel Mail select the `smtppool` Jakarta Mail facade. It contains no pool registry, allocator, delegate resolver, or independent failure policy; those stay in `smtp-connection-pool-jakarta-provider`.
+This optional module makes Camel Mail select the pooled `smtppool` Jakarta Mail transport. It contains no pool registry, allocator, delegate resolver, or independent failure policy; those stay in `smtp-connection-pool-jakarta-provider`.
 
 It targets Camel Mail `4.21.x` and Java 17. It is available since `4.0.0`.
 

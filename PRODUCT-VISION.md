@@ -13,7 +13,7 @@ Start with the [demo project](smtp-connection-pool-demo/README.md), not the diag
 2. [Simple Java Mail](smtp-connection-pool-demo/src/main/java/org/simplejavamail/smtpconnectionpool/demo/SimpleJavaMailDemo.java) as a higher-level library built directly on the pool;
 3. [plain Jakarta Mail](smtp-connection-pool-demo/src/main/java/org/simplejavamail/smtpconnectionpool/demo/JakartaMailDemo.java), [Spring](smtp-connection-pool-demo/src/main/java/org/simplejavamail/smtpconnectionpool/demo/SpringDemo.java), and [Camel](smtp-connection-pool-demo/src/main/java/org/simplejavamail/smtpconnectionpool/demo/CamelDemo.java) as path-3 variants.
 
-The smoke tests assert delivered messages, the number of physical connections opened, connection reuse, and zero active connections after shutdown. The demo is built and tested with the rest of the project but excluded from Maven Central, so only the three application-facing modules are published.
+The smoke tests assert delivered messages, the number of physical connections opened, connection reuse, and zero active connections after shutdown. The demo is built and tested with the rest of the project but excluded from Maven Central, so Maven Central contains only the three modules listed below.
 
 There is intentionally no standalone path-2 demo before Simple Java Mail 10.0.0 releases the public API from #698. The Simple Java Mail 9.2.0 example includes `batch-module` only as internal support for its high-level `Mailer` and never calls an internal batch API. Once the supported path-2 API exists, its official runnable example will be added to this demo project and linked from the Simple Java Mail website.
 

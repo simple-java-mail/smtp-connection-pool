@@ -47,7 +47,7 @@ The architecture, ownership rules, and five flow diagrams are in [PRODUCT-VISION
 
 ## Artifacts
 
-All three application-facing modules are released together at one version. Maven Central also receives the shared `smtp-connection-pool-parent` POM required by Maven; it is build metadata, not a fourth application dependency.
+All three published modules are released together at one version. Maven Central also receives the shared `smtp-connection-pool-parent` POM required by Maven; it is build metadata, not a fourth application dependency.
 
 | Artifact | Purpose | Java |
 | --- | --- | --- |

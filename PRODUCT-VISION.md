@@ -1,7 +1,7 @@
 # Product vision: three ways to use pooled SMTP transports
 
-- Status: **locked product baseline, implemented locally for [#10](https://github.com/simple-java-mail/smtp-connection-pool/issues/10) and awaiting review/release acceptance**
-- Proposed target: **`3.2.0`**, subject to review acceptance and separate release approval
+- Status: **locked product baseline delivered by [#10](https://github.com/simple-java-mail/smtp-connection-pool/issues/10)**
+- Release: **`4.0.0`**
 - Downstream: **[Simple Java Mail #698](https://github.com/bbottema/simple-java-mail/issues/698)**
 - Related transport initiative: **[Simple Java Mail #699](https://github.com/bbottema/simple-java-mail/issues/699)**
 
@@ -36,7 +36,7 @@ These are product choices, not a one-to-one count of Maven artifacts.
 | --- | --- | --- | --- |
 | 1. Direct `smtp-connection-pool` integration | The application or a higher-level library needs full control over clustering, selection, transport access, failure handling, and shutdown. Simple Java Mail is the reference higher-level consumer of this path. | The integrating application or library | Available now |
 | 2. Simple Java Mail `batch-module` directly | The application wants the batch executor and clustered pooling without the higher-level `EmailBuilder` and `Mailer` APIs. It still creates its own `MimeMessage` objects and sends them inside a safe transport callback. | A public batch-module facade | Planned for Simple Java Mail 10.0.0 in [#698](https://github.com/bbottema/simple-java-mail/issues/698) |
-| 3. Standard Jakarta Mail facade | A framework owns `Transport` acquisition and closing. Plain Jakarta Mail and Spring select the `smtppool` protocol; Camel uses a small adapter that makes the same selection. | `PooledTransport` | Implemented locally for [#10](https://github.com/simple-java-mail/smtp-connection-pool/issues/10); not published yet |
+| 3. Standard Jakarta Mail facade | A framework owns `Transport` acquisition and closing. Plain Jakarta Mail and Spring select the `smtppool` protocol; Camel uses a small adapter that makes the same selection. | `PooledTransport` | Available since 4.0.0 through [#10](https://github.com/simple-java-mail/smtp-connection-pool/issues/10) |
 
 Simple Java Mail remains on path 1 internally. It should reuse the common lease contract introduced by this work, but should not route its own rich transport lifecycle through `PooledTransport`. Its public path-2 facade keeps that raw lease internal and automatically selects release or invalidation around the caller's callback.
 

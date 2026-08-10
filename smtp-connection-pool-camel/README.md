@@ -2,7 +2,7 @@
 
 This optional module makes Camel Mail select the `smtppool` Jakarta Mail facade. It contains no pool registry, allocator, delegate resolver, or independent failure policy; those stay in `smtp-connection-pool-jakarta-provider`.
 
-It targets Camel Mail `4.21.x` and Java 17. It is implemented for the proposed `3.2.0` release and is not present in the currently published `3.1.0` release.
+It targets Camel Mail `4.21.x` and Java 17. It is available since `4.0.0`.
 
 ## See it run
 
@@ -14,7 +14,7 @@ Start with the real-server [Camel demo](../smtp-connection-pool-demo/src/main/ja
 <dependency>
     <groupId>org.simplejavamail</groupId>
     <artifactId>smtp-connection-pool-camel</artifactId>
-    <version>3.2.0</version><!-- once published -->
+    <version>4.0.0</version>
 </dependency>
 ```
 

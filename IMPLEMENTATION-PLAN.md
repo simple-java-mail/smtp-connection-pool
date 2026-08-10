@@ -1,6 +1,6 @@
 # Implementation plan for Jakarta Mail provider support
 
-This plan executes the locked local planning baseline in [PRODUCT-VISION.md](PRODUCT-VISION.md). Phases 0–5 are implemented in the current working tree; unchecked entries identify release work or explicit hardening still outstanding. The upstream work is tracked by [smtp-connection-pool #10](https://github.com/simple-java-mail/smtp-connection-pool/issues/10); review acceptance and release scope remain decisions recorded in that issue. The dependent Simple Java Mail work is tracked separately by [Simple Java Mail #698](https://github.com/bbottema/simple-java-mail/issues/698), with [Simple Java Mail #699](https://github.com/bbottema/simple-java-mail/issues/699) treated as a related physical-transport initiative rather than a dependency.
+This plan records the locked product baseline delivered in `4.0.0` through [smtp-connection-pool #10](https://github.com/simple-java-mail/smtp-connection-pool/issues/10). Phases 0–5 are implemented; unchecked entries identify publication bookkeeping or the separate downstream Simple Java Mail work. That work is tracked by [Simple Java Mail #698](https://github.com/bbottema/simple-java-mail/issues/698), with [Simple Java Mail #699](https://github.com/bbottema/simple-java-mail/issues/699) treated as a related physical-transport initiative rather than a dependency.
 
 ## Run the implementation first
 
@@ -14,11 +14,11 @@ The module is a CI-tested part of the reactor and a release gate, while remainin
 
 ## Delivery target
 
-- Proposed target release: `3.2.0` (SemVer minor, provided the implemented candidate is accepted in #10).
+- Release: `4.0.0` (major milestone release signaling the project's expansion into a broader SMTP integration platform).
 - Release contents: preserved core artifact, optional Jakarta Mail provider artifact, and optional Camel adapter artifact.
-- Downstream order: publish and verify `smtp-connection-pool 3.2.0` first; update Simple Java Mail afterwards.
+- Downstream order: publish and verify `smtp-connection-pool 4.0.0` first; update Simple Java Mail afterwards.
 - Cross-initiative order: #699 may proceed independently; neither release waits for the other.
-- Release date: deliberately unset. The `3.2.0` milestone receives a due date when implementation is scheduled, as required by [RELEASING.md](RELEASING.md).
+- Release date: 10 August 2026. Milestone `4.0.0` carries that due date and an empty description, as required by [RELEASING.md](RELEASING.md).
 
 ## Locked architecture decision: hybrid delegate selection
 
@@ -71,7 +71,7 @@ Downstream boundary:
 - [x] Implement a transport-neutral Jakarta Mail failure/health policy without Angus-specific public or shared code.
 - [x] Document the one-physical-connection-per-delegate and single-pooling-owner contract for custom providers.
 - [x] Add a checksum-pinned japicmp comparison against the published `3.1.0` core and preserve its coordinate, packages, public API, automatic-module name, OSGi identity, Java 8 bytecode, and dependency ranges.
-- [x] Rehearse the pinned `github-maven-deploy` orb's reactor-aware `versions:set`: root and every child advance from `3.1.0` to `3.2.0` together.
+- [x] Rehearse the pinned `github-maven-deploy` orb's reactor-aware `versions:set`: root and every child advance from `3.1.0` to `4.0.0` together.
 
 Exit criterion: the API/configuration review cannot alter the three product paths, their lifecycle ownership, arbitrary explicit real-provider lookup, or the single-pooling-owner boundary defined in the product vision.
 
@@ -164,36 +164,36 @@ Exit criterion: Camel reaches the same provider path through its adapter; the ad
 - [x] Add Camel-specific setup beside the Camel module.
 - [x] Add Javadocs for every new public lease, provider manager, configuration, and shutdown API.
 - [x] Reconcile the local `README.md` and `RELEASE.txt`; the final GitHub release body remains Phase 6 publication work.
-- [x] Mark every `3.2.0` dependency and configuration example as implemented-but-unpublished.
+- [x] Mark every `4.0.0` dependency and configuration example as implemented-but-unpublished.
 - [x] Add a reactor-only, non-published `smtp-connection-pool-demo` project with a random-port Wiser SMTP server and executable `main` classes.
 - [x] Demonstrate direct core usage first, Simple Java Mail as the path-1 reference consumer second, and plain Jakarta Mail/Spring/Camel as path-3 variants.
 - [x] Prove three-message/one-physical-connection reuse, deterministic shutdown, and direct invalidation/replacement with smoke tests that execute the example code.
 - [x] Document that the Simple Java Mail 9.2.0 demo uses `batch-module` only as the Mailer's internal optional support and imports no batch internals.
 - [x] Defer the standalone path-2 demo until Simple Java Mail 10.0.0 publishes the supported #698 facade.
 
-## Phase 6: release `smtp-connection-pool 3.2.0`
+## Phase 6: release `smtp-connection-pool 4.0.0`
 
 Follow [RELEASING.md](RELEASING.md). In summary:
 
 - [x] Publish and verify `generic-object-pool 2.4.1`, whose shutdown future now includes allocator deallocation.
 - [x] Publish and verify `clustered-object-pool 4.0.2`, which depends on that fix, includes already-draining pools in aggregate shutdown, and forgets drained pool records.
-- [ ] Create/reuse milestone `3.2.0` only after a planned release date is known; set that date and leave the milestone description empty.
-- [ ] Assign issue #10 and every included PR/issue to the milestone.
+- [x] Create/reuse milestone `4.0.0` only after a planned release date is known; set that date and leave the milestone description empty.
+- [x] Assign issue #10 and every included PR/issue to the milestone.
 - [x] Verify the local candidate reactor with tests, Javadocs, SpotBugs, binary compatibility, artifact packaging, and the documented examples; repeat on the eventual reviewed release commit.
 - [x] Inspect the combined effective POM and perform a `skipPublishing` deploy-lifecycle rehearsal; the technical parent plus core, provider, Camel, and reactor-only demo outputs install locally with aligned metadata. Central staging remains publication-time verification because `skipPublishing` intentionally stages nothing.
-- [ ] During publication rehearsal, inspect the generated Central bundle and prove that it contains the parent plus all three runtime artifacts, but no `smtp-connection-pool-demo` coordinate.
+- [x] During publication rehearsal, inspect the generated Central bundle and prove that it contains the parent plus all three runtime artifacts, but no `smtp-connection-pool-demo` coordinate. The local structural rehearsal skips signing because GPG is supplied by the CircleCI release context; the actual release bundle remains subject to Central's signature validation.
 - [ ] Merge to `master`; let CircleCI own version selection, release commit, and tag creation.
-- [ ] With explicit release approval, approve the **minor** deployment lane exactly once.
-- [ ] Verify tag `3.2.0` and all three artifacts in Maven Central.
-- [ ] Publish one self-contained GitHub release titled `v3.2.0` for tag `3.2.0`.
+- [ ] With explicit release approval, approve the **major** deployment lane exactly once.
+- [ ] Verify tag `4.0.0` and all three artifacts in Maven Central.
+- [ ] Publish one self-contained GitHub release titled `v4.0.0` for tag `4.0.0`.
 - [ ] Add a short availability/configuration comment to issue #10 and close it if fully delivered.
-- [ ] Reconcile and close milestone `3.2.0`, replacing its due date with the actual publication date.
+- [ ] Reconcile and close milestone `4.0.0`, replacing its due date with the actual publication date.
 
 ## Phase 7: update Simple Java Mail (downstream follow-up)
 
-This phase is outside the upstream `3.2.0` release definition of done. It is separate downstream work owned by [Simple Java Mail #698](https://github.com/bbottema/simple-java-mail/issues/698), targeted at Simple Java Mail 10.0.0. That release may follow months after the pool release and does not block the upstream demo or release. [Simple Java Mail #699](https://github.com/bbottema/simple-java-mail/issues/699) is a coordination input: #698 must leave a transport-neutral seam, but it does not implement #699.
+This phase is outside the upstream `4.0.0` release definition of done. It is separate downstream work owned by [Simple Java Mail #698](https://github.com/bbottema/simple-java-mail/issues/698), targeted at Simple Java Mail 10.0.0. That release may follow months after the pool release and does not block the upstream demo or release. [Simple Java Mail #699](https://github.com/bbottema/simple-java-mail/issues/699) is a coordination input: #698 must leave a transport-neutral seam, but it does not implement #699.
 
-- [ ] Upgrade the core pool dependency only after `3.2.0` is available from Maven Central.
+- [ ] Upgrade the core pool dependency only after `4.0.0` is available from Maven Central.
 - [ ] Keep Simple Java Mail on the direct-integration path.
 - [ ] Make the new public batch callback facade and the existing reflective Mailer adapter delegate to one internal engine.
 - [ ] Keep the core lease internal to the facade: run callbacks with the selected Session/Transport, release on success, and invalidate on failure.
@@ -217,7 +217,7 @@ This phase is outside the upstream `3.2.0` release definition of done. It is sep
 ## Compatibility commitments
 
 - Existing core consumers keep the same Maven coordinate and direct API.
-- The core artifact remains binary-compatible with `3.1.0` unless the release is explicitly reclassified as SemVer major.
+- Although `4.0.0` deliberately signals the architectural milestone, the core artifact remains binary-compatible with `3.1.0`; the major version is not permission to introduce an unnecessary consumer break.
 - The new provider and Camel dependencies are opt-in.
 - Selecting `smtppool` never changes the meaning of `smtp` or `smtps` globally.
 - Declarative protocol selection and programmatic `Provider`/resolver selection reach the same allocator and lifecycle semantics.
@@ -226,7 +226,7 @@ This phase is outside the upstream `3.2.0` release definition of done. It is sep
 - Core/provider Java compatibility is not raised merely to satisfy Camel.
 - Simple Java Mail users retain current high-level behavior; the new batch facade is additive.
 
-## Upstream `3.2.0` definition of done
+## Upstream `4.0.0` definition of done
 
 The upstream release is complete only when:
 

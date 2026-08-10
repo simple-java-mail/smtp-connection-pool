@@ -1,6 +1,6 @@
 # Jakarta Mail `smtppool` provider
 
-This module adapts the core connection pool to Jakarta Mail's ordinary `Transport` lifecycle. It is implemented for the proposed `3.2.0` release and is not present in the currently published `3.1.0` release.
+This module adapts the core connection pool to Jakarta Mail's ordinary `Transport` lifecycle. It is available since `4.0.0`.
 
 It registers only the protocol `smtppool`. A real transport is selected underneath it; `smtp` and `smtps` are never replaced globally.
 
@@ -14,7 +14,7 @@ Start with the real-server [plain Jakarta Mail demo](../smtp-connection-pool-dem
 <dependency>
     <groupId>org.simplejavamail</groupId>
     <artifactId>smtp-connection-pool-jakarta-provider</artifactId>
-    <version>3.2.0</version><!-- once published -->
+    <version>4.0.0</version>
 </dependency>
 ```
 

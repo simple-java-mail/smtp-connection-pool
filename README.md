@@ -9,7 +9,7 @@
 
 It does not build messages or decide how SMTP works. The selected Jakarta Mail provider still owns authentication, TLS, EHLO, PIPELINING, CHUNKING, response parsing, and the actual send.
 
-> The provider and Camel modules documented below are implemented for the proposed `3.2.0` release but are not part of the currently published `3.1.0` release. Publication still requires the release process in [RELEASING.md](RELEASING.md).
+Version `4.0.0` is the project's architectural expansion into a broader SMTP integration platform: it adds the optional Jakarta Mail provider and Camel adapter while preserving the existing core coordinate and direct API.
 
 ## Start here: executable demos
 
@@ -37,9 +37,9 @@ These are usage paths, not three abstraction levels inside this repository.
 
 | Path | Choose it when | Lifecycle owner | Status |
 | --- | --- | --- | --- |
-| **1. Integrate the core pool directly** | Your application or a higher-level library needs clustering, explicit leases, and complete failure/shutdown control. Simple Java Mail itself belongs here. | Your integration | Available; explicit `SmtpTransportLease` is new in the next release |
+| **1. Integrate the core pool directly** | Your application or a higher-level library needs clustering, explicit leases, and complete failure/shutdown control. Simple Java Mail itself belongs here. | Your integration | Available; explicit `SmtpTransportLease` is available since 4.0.0 |
 | **2. Use Simple Java Mail's `batch-module` directly** | You create Jakarta Mail messages yourself but want Simple Java Mail's asynchronous batch engine and a safe callback facade without adopting `EmailBuilder` and `Mailer`. | The batch facade | Planned for Simple Java Mail 10.0.0 in [#698](https://github.com/bbottema/simple-java-mail/issues/698) |
-| **3. Use the standard Jakarta Mail facade** | Plain Jakarta Mail, Spring, or Camel already obtains and closes `Transport` instances. | `PooledTransport` | Implemented here for [#10](https://github.com/simple-java-mail/smtp-connection-pool/issues/10); not published yet |
+| **3. Use the standard Jakarta Mail facade** | Plain Jakarta Mail, Spring, or Camel already obtains and closes `Transport` instances. | `PooledTransport` | Available since 4.0.0 through [#10](https://github.com/simple-java-mail/smtp-connection-pool/issues/10) |
 
 Simple Java Mail stays on path 1 internally. Path 2 is a narrower public facade over part of its batch engine. Path 3 makes pooling look like a normal Jakarta Mail transport protocol.
 
@@ -65,7 +65,7 @@ The provider artifact contains the Jakarta Mail facade, not a physical SMTP impl
 <dependency>
     <groupId>org.simplejavamail</groupId>
     <artifactId>smtp-connection-pool</artifactId>
-    <version>3.2.0</version><!-- once published -->
+    <version>4.0.0</version>
 </dependency>
 ```
 
@@ -140,7 +140,7 @@ Add the provider plus a physical Jakarta Mail implementation:
 <dependency>
     <groupId>org.simplejavamail</groupId>
     <artifactId>smtp-connection-pool-jakarta-provider</artifactId>
-    <version>3.2.0</version><!-- once published -->
+    <version>4.0.0</version>
 </dependency>
 <dependency>
     <groupId>org.eclipse.angus</groupId>
@@ -178,7 +178,7 @@ Spring uses the same provider by configuring `JavaMailSenderImpl` with protocol 
 <dependency>
     <groupId>org.simplejavamail</groupId>
     <artifactId>smtp-connection-pool-camel</artifactId>
-    <version>3.2.0</version><!-- once published -->
+    <version>4.0.0</version>
 </dependency>
 ```
 
@@ -205,7 +205,7 @@ Verification runs the core/provider/Camel tests, the real-server demo smoke test
 
 ## Release notes
 
-Next release (proposed `3.2.0`)
+`4.0.0` (10 August 2026)
 
 - [#10](https://github.com/simple-java-mail/smtp-connection-pool/issues/10): add the explicit lease API, optional `smtppool` Jakarta Mail provider, and separate Camel adapter while preserving the existing core coordinate and direct API. Harden credential rotation and graceful/forced shutdown using `generic-object-pool 2.4.1` and `clustered-object-pool 4.0.2`.
 

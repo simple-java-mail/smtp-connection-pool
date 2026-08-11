@@ -12,7 +12,7 @@
 
 	<groupId>org.simplejavamail</groupId>
 	<artifactId>smtp-connection-pool-parent</artifactId>
-	<version>4.0.0</version>
+	<version>4.0.1</version>
 	<packaging>pom</packaging>
 	<name>SMTP Connection Pool :: Parent</name>
 	<description>Shared Maven build for the SMTP connection pool, Jakarta Mail provider, Camel adapter and executable demos.</description>

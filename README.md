@@ -19,6 +19,7 @@ The best introduction is the non-published [demo project](smtp-connection-pool-d
 | --- | --- | --- |
 | [DirectPoolDemo](smtp-connection-pool-demo/src/main/java/org/simplejavamail/smtpconnectionpool/demo/DirectPoolDemo.java) | Direct leases, release, forced failure, invalidation, and recovery | 3 messages over 1 connection; then replacement after a dropped connection |
 | [SimpleJavaMailDemo](smtp-connection-pool-demo/src/main/java/org/simplejavamail/smtpconnectionpool/demo/SimpleJavaMailDemo.java) | Simple Java Mail as a higher-level library built directly on the pool | 3 messages over 1 connection |
+| [BatchModuleDemo](smtp-connection-pool-demo/src/main/java/org/simplejavamail/smtpconnectionpool/demo/BatchModuleDemo.java) | Standalone Simple Java Mail batch callbacks over caller-created Jakarta Mail messages | 3 messages over 1 connection |
 | [JakartaMailDemo](smtp-connection-pool-demo/src/main/java/org/simplejavamail/smtpconnectionpool/demo/JakartaMailDemo.java) | Plain Jakarta Mail with `smtppool` | 3 messages over 1 connection |
 | [SpringDemo](smtp-connection-pool-demo/src/main/java/org/simplejavamail/smtpconnectionpool/demo/SpringDemo.java) | Spring `JavaMailSenderImpl` with `smtppool` | 3 messages over 1 connection |
 | [CamelDemo](smtp-connection-pool-demo/src/main/java/org/simplejavamail/smtpconnectionpool/demo/CamelDemo.java) | Camel with the separate `smtppool:` adapter | 3 messages over 1 connection |
@@ -29,7 +30,7 @@ Run the complete executable suite with JDK 21:
 mvn -pl smtp-connection-pool-demo -am test
 ```
 
-Or run `DemoLauncher` or any individual demo directly from IntelliJ. The demo is built and tested with the rest of the project, but is deliberately excluded from Maven Central. A standalone `batch-module` demo will join it after Simple Java Mail 9.3.0 publishes the supported path-2 API from [#698](https://github.com/bbottema/simple-java-mail/issues/698).
+Or run `DemoLauncher` or any individual demo directly from IntelliJ. The demo is built and tested with the rest of the project, but is deliberately excluded from Maven Central. `BatchModuleDemo` uses the supported standalone path-2 API published in Simple Java Mail 9.3.0 through [#698](https://github.com/bbottema/simple-java-mail/issues/698).
 
 ## Choose one orchestration owner
 
@@ -53,7 +54,7 @@ The pooled choices reduce to three integration paths, not three abstraction leve
 | Path | Choose it when | Who manages the pool | Status |
 | --- | --- | --- | --- |
 | **1. Use the pool directly** | Your application or a higher-level library needs clustering, explicit leases, and complete failure/shutdown control. Simple Java Mail itself belongs here. | Your application or library | Available; explicit `SmtpTransportLease` is available since 4.0.0 |
-| **2. Use Simple Java Mail's `batch-module` directly** | You create Jakarta Mail messages yourself but want Simple Java Mail's asynchronous batch engine and a safe callback API without adopting `EmailBuilder` and `Mailer`. | Simple Java Mail's batch API | Planned for Simple Java Mail 9.3.0 in [#698](https://github.com/bbottema/simple-java-mail/issues/698) |
+| **2. Use Simple Java Mail's `batch-module` directly** | You create Jakarta Mail messages yourself but want Simple Java Mail's asynchronous batch engine and a safe callback API without adopting `EmailBuilder` and `Mailer`. | Simple Java Mail's batch API | Available since Simple Java Mail 9.3.0 through [#698](https://github.com/bbottema/simple-java-mail/issues/698) |
 | **3. Use it as a Jakarta Mail `Transport`** | Plain Jakarta Mail, Spring, or Camel already obtains and closes `Transport` instances. | `PooledTransport` | Available since 4.0.0 through [#10](https://github.com/simple-java-mail/smtp-connection-pool/issues/10) |
 
 Simple Java Mail stays on path 1 internally. Path 2 is a narrower public API over part of its batch engine. Path 3 presents the pool as a normal Jakarta Mail transport protocol.
@@ -158,7 +159,7 @@ The supplier owns caching and refresh. A fixed token remains available through `
 
 ## Path 2: Simple Java Mail `batch-module`
 
-This path is deliberately delivered in Simple Java Mail, not in this repository. [Simple Java Mail #698](https://github.com/bbottema/simple-java-mail/issues/698) adds a public callback API for Simple Java Mail 9.3.0, for applications that already create Jakarta Mail messages but want asynchronous execution, clustering, and safe release/invalidate handling without adopting the full `EmailBuilder`/`Mailer` API.
+This path is deliberately delivered in Simple Java Mail, not in this repository. [Simple Java Mail #698](https://github.com/bbottema/simple-java-mail/issues/698) added a public callback API in Simple Java Mail 9.3.0 for applications that already create Jakarta Mail messages but want asynchronous execution, clustering, and safe release/invalidate handling without adopting the full `EmailBuilder`/`Mailer` API.
 
 ```xml
 <dependency>
@@ -181,7 +182,7 @@ try (BatchTransportExecutor<String> batch =
 }
 ```
 
-`BatchTransportExecutor` uses `SmtpTransportLease` internally and remains separate from `smtppool`. It releases after a successful callback, invalidates after an escaping failure, and owns only the default executor it creates. The executable demo project will add this path after 9.3.0 is available from Maven Central.
+`BatchTransportExecutor` uses `SmtpTransportLease` internally and remains separate from `smtppool`. It releases after a successful callback, invalidates after an escaping failure, and owns only the default executor it creates. [BatchModuleDemo](smtp-connection-pool-demo/src/main/java/org/simplejavamail/smtpconnectionpool/demo/BatchModuleDemo.java) runs this exact path against a real dummy SMTP server.
 
 ## Path 3: use it as a Jakarta Mail `Transport`
 

@@ -41,7 +41,7 @@
 		<angus-mail.version>2.0.5</angus-mail.version>
 		<spring.version>6.2.19</spring.version>
 		<camel.version>4.21.0</camel.version>
-		<simple-java-mail.version>9.2.0</simple-java-mail.version>
+		<simple-java-mail.version>9.3.0</simple-java-mail.version>
 		<subethasmtp.version>7.2.2</subethasmtp.version>
 		<jspecify.version>1.0.0</jspecify.version>
 		<core.compatibility.version>4.0.0</core.compatibility.version>

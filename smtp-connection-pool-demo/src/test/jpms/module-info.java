@@ -5,4 +5,5 @@ module org.simplejavamail.smtpconnectionpool.jpms.consumer {
 	requires org.simplejavamail.smtpconnectionpool;
 	requires org.simplejavamail.smtpconnectionpool.jakarta;
 	requires org.simplejavamail.smtpconnectionpool.camel;
+	requires org.simplejavamail.batch;
 }

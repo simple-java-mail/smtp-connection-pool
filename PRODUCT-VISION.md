@@ -2,20 +2,21 @@
 
 - Status: **shipped in `4.0.0` through [#10](https://github.com/simple-java-mail/smtp-connection-pool/issues/10)**
 - Release: **`4.0.0`**
-- Simple Java Mail follow-up: **[#698](https://github.com/bbottema/simple-java-mail/issues/698)**
+- Simple Java Mail standalone batch follow-up: **shipped in `9.3.0` through [#698](https://github.com/bbottema/simple-java-mail/issues/698)**
 - Related transport initiative: **[Simple Java Mail #699](https://github.com/bbottema/simple-java-mail/issues/699)**
 
 ## See it work
 
-Start with the [demo project](smtp-connection-pool-demo/README.md), not the diagrams. It turns the product model into five runnable integrations against a random-port dummy SMTP server:
+Start with the [demo project](smtp-connection-pool-demo/README.md), not the diagrams. It turns the product model into six runnable integrations against a random-port dummy SMTP server:
 
 1. [direct pool ownership](smtp-connection-pool-demo/src/main/java/org/simplejavamail/smtpconnectionpool/demo/DirectPoolDemo.java), including forced disconnect, invalidation, and recovery;
 2. [Simple Java Mail](smtp-connection-pool-demo/src/main/java/org/simplejavamail/smtpconnectionpool/demo/SimpleJavaMailDemo.java) as a higher-level library built directly on the pool;
-3. [plain Jakarta Mail](smtp-connection-pool-demo/src/main/java/org/simplejavamail/smtpconnectionpool/demo/JakartaMailDemo.java), [Spring](smtp-connection-pool-demo/src/main/java/org/simplejavamail/smtpconnectionpool/demo/SpringDemo.java), and [Camel](smtp-connection-pool-demo/src/main/java/org/simplejavamail/smtpconnectionpool/demo/CamelDemo.java) as path-3 variants.
+3. [standalone batch-module](smtp-connection-pool-demo/src/main/java/org/simplejavamail/smtpconnectionpool/demo/BatchModuleDemo.java) orchestration over caller-created Jakarta Mail messages; and
+4. [plain Jakarta Mail](smtp-connection-pool-demo/src/main/java/org/simplejavamail/smtpconnectionpool/demo/JakartaMailDemo.java), [Spring](smtp-connection-pool-demo/src/main/java/org/simplejavamail/smtpconnectionpool/demo/SpringDemo.java), and [Camel](smtp-connection-pool-demo/src/main/java/org/simplejavamail/smtpconnectionpool/demo/CamelDemo.java) as path-3 variants.
 
 The smoke tests assert delivered messages, the number of physical connections opened, connection reuse, and zero active connections after shutdown. The demo is built and tested with the rest of the project but excluded from Maven Central, so Maven Central contains only the three modules listed below.
 
-There is intentionally no standalone path-2 demo before Simple Java Mail 9.3.0 releases the public API from #698. The Simple Java Mail 9.2.0 example includes `batch-module` only as internal support for its high-level `Mailer` and never calls an internal batch API. Once the supported path-2 API is published, its official runnable example will be added to this demo project and linked from the Simple Java Mail website.
+The standalone path-2 demo uses the public API released by Simple Java Mail 9.3.0 through #698. It never calls an internal batch type and remains distinct from the higher-level `SimpleJavaMailDemo`.
 
 ## Product promise
 
@@ -35,7 +36,7 @@ These are product choices, not a one-to-one count of Maven artifacts.
 | Path | Choose this when | Who manages the pool | Status |
 | --- | --- | --- | --- |
 | 1. Use `smtp-connection-pool` directly | The application or a higher-level library needs full control over clustering, selection, transport access, failure handling, and shutdown. Simple Java Mail itself uses this path. | The application or library | Available now |
-| 2. Use Simple Java Mail's `batch-module` directly | The application wants the batch executor and clustered pooling without the higher-level `EmailBuilder` and `Mailer` APIs. It still creates its own `MimeMessage` objects and sends them inside a safe transport callback. | Simple Java Mail's public batch API | Planned for Simple Java Mail 9.3.0 in [#698](https://github.com/bbottema/simple-java-mail/issues/698) |
+| 2. Use Simple Java Mail's `batch-module` directly | The application wants the batch executor and clustered pooling without the higher-level `EmailBuilder` and `Mailer` APIs. It still creates its own `MimeMessage` objects and sends them inside a safe transport callback. | Simple Java Mail's public batch API | Available since Simple Java Mail 9.3.0 through [#698](https://github.com/bbottema/simple-java-mail/issues/698) |
 | 3. Use it as a Jakarta Mail `Transport` | A framework owns `Transport` acquisition and closing. Plain Jakarta Mail and Spring select the `smtppool` protocol; Camel uses a small adapter that makes the same selection. | `PooledTransport` | Available since 4.0.0 through [#10](https://github.com/simple-java-mail/smtp-connection-pool/issues/10) |
 
 Simple Java Mail remains on path 1 internally. It should reuse the common lease contract introduced by this work, but should not route its richer transport lifecycle through `PooledTransport`. Its public path-2 API keeps the raw lease internal and automatically releases or invalidates it around the caller's callback.
@@ -268,7 +269,7 @@ flowchart TB
 
 ### 5. Simple Java Mail batch module as the middle path
 
-This planned public API supplies batching and pool-aware transport lifecycle without requiring the full Simple Java Mail mailer abstraction. The callback is the public safety boundary; the raw lease stays inside the module.
+This public API supplies batching and pool-aware transport lifecycle without requiring the full Simple Java Mail mailer abstraction. The callback is the public safety boundary; the raw lease stays inside the module.
 
 ```mermaid
 flowchart TB

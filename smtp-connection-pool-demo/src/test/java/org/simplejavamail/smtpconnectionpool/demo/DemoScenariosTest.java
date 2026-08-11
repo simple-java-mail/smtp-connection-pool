@@ -24,6 +24,11 @@ class DemoScenariosTest {
     }
 
     @Test
+    void standaloneBatchModuleReusesOneConnection() throws Exception {
+        assertSuccessfulReuse(BatchModuleDemo.run());
+    }
+
+    @Test
     void jakartaMailProviderReusesOneConnection() throws Exception {
         assertSuccessfulReuse(JakartaMailDemo.run());
     }

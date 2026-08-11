@@ -42,7 +42,7 @@
 			<groupId>org.simplejavamail</groupId>
 			<artifactId>simple-java-mail</artifactId>
 		</dependency>
-		<!-- Used internally by Simple Java Mail 9.2.0; the unsupported standalone API is never called here. -->
+		<!-- Also used directly by BatchModuleDemo through the public API introduced in Simple Java Mail 9.3.0. -->
 		<dependency>
 			<groupId>org.simplejavamail</groupId>
 			<artifactId>batch-module</artifactId>
@@ -80,7 +80,7 @@
 							<goal>build-classpath</goal>
 						</goals>
 						<configuration>
-							<includeArtifactIds>jakarta.mail-api,jakarta.activation-api,generic-object-pool,clustered-object-pool,smtp-connection-pool,smtp-connection-pool-jakarta-provider,smtp-connection-pool-camel</includeArtifactIds>
+							<includeArtifactIds>jakarta.mail-api,jakarta.activation-api,generic-object-pool,clustered-object-pool,smtp-connection-pool,smtp-connection-pool-jakarta-provider,smtp-connection-pool-camel,batch-module</includeArtifactIds>
 							<includeScope>compile</includeScope>
 							<outputFile>${project.build.directory}/jpms-module-path.txt</outputFile>
 						</configuration>

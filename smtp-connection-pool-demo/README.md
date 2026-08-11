@@ -3,7 +3,7 @@
 This demo module is the runnable introduction to `smtp-connection-pool`. It is built and tested with the rest of the repository, but it is deliberately excluded from Maven Central and must not be added as an application dependency.
 
 The verification build also compiles a JPMS consumer requiring the stable generic pool, clustered pool,
-SMTP pool, Jakarta provider, and Camel adapter module names.
+SMTP pool, Jakarta provider, Camel adapter, and Simple Java Mail batch module names.
 
 Every scenario starts its own Wiser/SubEtha dummy SMTP server on a random loopback port. The smoke tests verify both message delivery and physical connection behavior, so the examples demonstrate actual reuse rather than only showing configuration.
 
@@ -25,14 +25,15 @@ The examples follow the product order from the main README.
 | --- | --- | --- | --- |
 | 1 | `DirectPoolDemo` | Direct lease/release, explicit shutdown, and invalidate/replace after a forced disconnect | Reuse: 3 messages / 1 connection. Recovery: 2 healthy messages / 2 connections. |
 | 2 | `SimpleJavaMailDemo` | Simple Java Mail as a higher-level library built directly on the pool | 3 messages / 1 connection |
-| 3 | `JakartaMailDemo` | Plain Jakarta Mail selecting the `smtppool` provider | 3 messages / 1 connection |
-| 4 | `SpringDemo` | Spring `JavaMailSenderImpl` selecting `smtppool` | 3 messages / 1 connection |
-| 5 | `CamelDemo` | Camel selecting the separate `smtppool:` adapter | 3 messages / 1 connection |
+| 3 | `BatchModuleDemo` | Simple Java Mail's standalone batch callback API over caller-created Jakarta Mail messages | 3 messages / 1 connection |
+| 4 | `JakartaMailDemo` | Plain Jakarta Mail selecting the `smtppool` provider | 3 messages / 1 connection |
+| 5 | `SpringDemo` | Spring `JavaMailSenderImpl` selecting `smtppool` | 3 messages / 1 connection |
+| 6 | `CamelDemo` | Camel selecting the separate `smtppool:` adapter | 3 messages / 1 connection |
 
 Every scenario also verifies that the responsible application or framework leaves zero physical connections open after shutdown.
 
-## Why there is no standalone batch-module demo yet
+## Standalone batch-module demo
 
-Simple Java Mail 9.2.0 uses `batch-module` internally when its high-level `Mailer` enables connection pooling, so that optional JAR is present here only to make `SimpleJavaMailDemo` realistic. The demo never imports or calls an `internal` batch type.
+`BatchModuleDemo` uses the public `BatchTransportExecutor` API released in Simple Java Mail 9.3.0. It registers a caller-owned Jakarta Mail `Session`, creates each `MimeMessage` with the Session actually selected by the cluster, and sends it inside the callback-scoped `Transport`. Normal callback completion releases the physical connection for reuse, and closing the executor shuts down the pool.
 
-Using `batch-module` directly is a different product path. Its supported public API is planned in [Simple Java Mail #698](https://github.com/bbottema/simple-java-mail/issues/698) for Simple Java Mail 9.3.0. A standalone batch demo belongs in this module after that release is available; until then, adding one would teach an unpublished API.
+This remains a different product path from `SimpleJavaMailDemo`: the standalone example uses neither `EmailBuilder` nor `Mailer`, and imports no `internal` package. The facade owns orchestration while `smtp-connection-pool` remains the only physical connection pool.

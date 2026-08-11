@@ -10,7 +10,7 @@ The [executable demo project](smtp-connection-pool-demo/README.md) is the quicke
 mvn -pl smtp-connection-pool-demo -am test
 ```
 
-The demo is built and tested with the rest of the project and is part of every release check, but it is not published. The missing standalone `batch-module` example is deliberate until Simple Java Mail 9.3.0 delivers #698's supported public API.
+The demo is built and tested with the rest of the project and is part of every release check, but it is not published. Its standalone `batch-module` example consumes the supported public API delivered by Simple Java Mail 9.3.0 through #698.
 
 ## Delivery target
 
@@ -191,28 +191,28 @@ Follow [RELEASING.md](RELEASING.md). In summary:
 
 ## Phase 7: update Simple Java Mail (separate follow-up)
 
-This phase is not part of the completed `smtp-connection-pool 4.0.0` release. It is separate work owned by [Simple Java Mail #698](https://github.com/bbottema/simple-java-mail/issues/698), targeted at Simple Java Mail 9.3.0 and consuming the JPMS-fixed `smtp-connection-pool 4.0.1` follow-up. That release does not block this project's demos or releases. [Simple Java Mail #699](https://github.com/bbottema/simple-java-mail/issues/699) is a design input: #698 must leave room for a transport-neutral implementation, but it does not implement #699.
+This phase is not part of the completed `smtp-connection-pool 4.0.0` release. It was delivered by [Simple Java Mail #698](https://github.com/bbottema/simple-java-mail/issues/698) in Simple Java Mail 9.3.0 and consumes the JPMS-fixed `smtp-connection-pool 4.0.1` follow-up. [Simple Java Mail #699](https://github.com/bbottema/simple-java-mail/issues/699) remains separate: #698 leaves room for a transport-neutral implementation but does not implement #699.
 
-- [ ] Upgrade Simple Java Mail to the released `smtp-connection-pool 4.0.1` dependency.
-- [ ] Keep Simple Java Mail on the direct-integration path.
-- [ ] Make the new public batch callback facade and the existing reflective Mailer adapter delegate to one internal engine.
-- [ ] Keep `SmtpTransportLease` internal to the batch API: run callbacks with the selected Session/Transport, release on success, and invalidate on failure.
-- [ ] Keep every public batch callback and result expressed in Jakarta Mail/Simple Java Mail abstractions; do not expose Angus or a prospective #699 client type.
-- [ ] Verify the direct and batch engines work with a deterministic non-Angus `Transport` provider selected by the registered Session.
-- [ ] Leave Simple Java Mail's existing Angus-only submission-receipt inspection unchanged; transport-neutral receipt work belongs to #699 rather than #698.
-- [ ] Publish batch-specific configuration that does not expose `OperationalConfig` or require a `Mailer`.
-- [ ] Support cluster-selected and session-sticky operations, executor ownership/injection, synchronous callbacks, asynchronous submission, and deterministic shutdown.
-- [ ] Resolve OAuth2 configuration from the actually selected registered Session so clustered selection cannot copy a token supplier from the wrong caller-supplied Session.
-- [ ] Add a standalone compile/API test that depends only on `batch-module` and imports no `internal` packages.
-- [ ] Preserve the `org.simplejavamail.batch` automatic module name and Java 8 compatibility.
-- [ ] Update batch-module Javadocs and Simple Java Mail supporting-library release notes.
-- [ ] After Simple Java Mail 9.3.0 is published, add the standalone path-2 example to this repository's non-published demo module and link the website documentation to it.
-- [ ] Add `simplejavamail.org/src/pages/smtp-connection-pooling.hbs` at `/smtp-connection-pooling.html`, register it in the site manifest as a child of `/modules.html`, and link it from the modules and existing batch/pooling documentation.
-- [ ] Generalize the website's active-navigation handling for `breadcrumbParent`; do not hand-edit generated navigation or sitemap output.
-- [ ] Keep the direct batch path separate from `smtppool`; do not stack one pool over the other.
-- [ ] If #699 chooses `CustomMailer`, document and test that it bypasses the batch pool and owns its own reusable-session lifecycle; if it chooses a Jakarta provider, test it as a physical delegate instead.
-- [ ] Run the website checks defined in its own release checklist.
-- [ ] Release Simple Java Mail through its independently authorized workflow.
+- [x] Upgrade Simple Java Mail to the released `smtp-connection-pool 4.0.1` dependency.
+- [x] Keep Simple Java Mail on the direct-integration path.
+- [x] Make the new public batch callback facade and the existing reflective Mailer adapter delegate to one internal engine.
+- [x] Keep `SmtpTransportLease` internal to the batch API: run callbacks with the selected Session/Transport, release on success, and invalidate on failure.
+- [x] Keep every public batch callback and result expressed in Jakarta Mail/Simple Java Mail abstractions; do not expose Angus or a prospective #699 client type.
+- [x] Verify the direct and batch engines work with a deterministic non-Angus `Transport` provider selected by the registered Session.
+- [x] Leave Simple Java Mail's existing Angus-only submission-receipt inspection unchanged; transport-neutral receipt work belongs to #699 rather than #698.
+- [x] Publish batch-specific configuration that does not expose `OperationalConfig` or require a `Mailer`.
+- [x] Support cluster-selected and session-sticky operations, executor ownership/injection, synchronous callbacks, asynchronous submission, and deterministic shutdown.
+- [x] Resolve OAuth2 configuration from the actually selected registered Session so clustered selection cannot copy a token supplier from the wrong caller-supplied Session.
+- [x] Add a standalone compile/API test that depends only on `batch-module` and imports no `internal` packages.
+- [x] Preserve the `org.simplejavamail.batch` automatic module name and Java 8 compatibility.
+- [x] Update batch-module Javadocs and Simple Java Mail supporting-library release notes.
+- [x] After Simple Java Mail 9.3.0 is published, add the standalone path-2 example to this repository's non-published demo module and link the website documentation to it.
+- [x] Add `simplejavamail.org/src/pages/smtp-connection-pooling.hbs` at `/smtp-connection-pooling.html`, register it in the site manifest as a child of `/modules.html`, and link it from the modules and existing batch/pooling documentation.
+- [x] Generalize the website's active-navigation handling for `breadcrumbParent`; do not hand-edit generated navigation or sitemap output.
+- [x] Keep the direct batch path separate from `smtppool`; do not stack one pool over the other.
+- [x] Keep #699 separate: document its one-owner constraint, but defer its `CustomMailer` or Jakarta-provider implementation and tests to #699.
+- [x] Run the website checks defined in its own release checklist.
+- [x] Release Simple Java Mail through its independently authorized workflow.
 
 ## Compatibility commitments
 

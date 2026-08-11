@@ -2,6 +2,9 @@
 
 This demo module is the runnable introduction to `smtp-connection-pool`. It is built and tested with the rest of the repository, but it is deliberately excluded from Maven Central and must not be added as an application dependency.
 
+The verification build also compiles a JPMS consumer requiring the stable generic pool, clustered pool,
+SMTP pool, Jakarta provider, and Camel adapter module names.
+
 Every scenario starts its own Wiser/SubEtha dummy SMTP server on a random loopback port. The smoke tests verify both message delivery and physical connection behavior, so the examples demonstrate actual reuse rather than only showing configuration.
 
 ## Run the complete suite
@@ -32,4 +35,4 @@ Every scenario also verifies that the responsible application or framework leave
 
 Simple Java Mail 9.2.0 uses `batch-module` internally when its high-level `Mailer` enables connection pooling, so that optional JAR is present here only to make `SimpleJavaMailDemo` realistic. The demo never imports or calls an `internal` batch type.
 
-Using `batch-module` directly is a different product path. Its supported public API is planned in [Simple Java Mail #698](https://github.com/bbottema/simple-java-mail/issues/698) for Simple Java Mail 10.0.0. A standalone batch demo belongs in this module after that release is available; until then, adding one would teach an unsupported internal API.
+Using `batch-module` directly is a different product path. Its supported public API is planned in [Simple Java Mail #698](https://github.com/bbottema/simple-java-mail/issues/698) for Simple Java Mail 9.3.0. A standalone batch demo belongs in this module after that release is available; until then, adding one would teach an unpublished API.

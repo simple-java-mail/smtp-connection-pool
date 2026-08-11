@@ -14,9 +14,12 @@ Start with the real-server [plain Jakarta Mail demo](../smtp-connection-pool-dem
 <dependency>
     <groupId>org.simplejavamail</groupId>
     <artifactId>smtp-connection-pool-jakarta-provider</artifactId>
-    <version>4.0.0</version>
+    <version>4.0.1</version>
 </dependency>
 ```
+
+For JPMS applications, 4.0.1 and newer declare the stable automatic module name
+`org.simplejavamail.smtpconnectionpool.jakarta`.
 
 Also supply a Jakarta Mail implementation that actually speaks SMTP, such as Angus Mail. This module deliberately depends only on the Jakarta Mail API and the connection pool.
 
@@ -127,4 +130,4 @@ An injected manager is container-owned and is therefore not included in `shutdow
 - Do not hide a second physical connection pool in the delegate.
 - Use standard `MessagingException`, `SendFailedException`, and Jakarta Mail listener semantics; do not require Angus-specific types.
 
-The module publishes both Jakarta Mail provider metadata and the standard `ServiceLoader` descriptor. Full JPMS module-path execution remains blocked by invalid legacy automatic-module names in the current `generic-object-pool` and `clustered-object-pool` releases; classpath discovery is covered by integration tests.
+The module publishes both Jakarta Mail provider metadata and the standard `ServiceLoader` descriptor. Starting with 4.0.1, the complete generic pool → clustered pool → SMTP pool → provider chain has stable automatic module names. The reactor compiles an end-to-end module-path consumer in addition to the classpath discovery integration tests.

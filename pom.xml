@@ -27,6 +27,7 @@
 	</modules>
 
 	<properties>
+		<automaticModuleName>org.simplejavamail.smtpconnectionpool.parent</automaticModuleName>
 		<java.version>1.8</java.version>
 		<maven.compiler.release>8</maven.compiler.release>
 		<compiler.encoding>UTF-8</compiler.encoding>
@@ -36,15 +37,15 @@
 		<license.owner.email>benny@bennybottema.com</license.owner.email>
 		<jakarta-mail.version>2.1.3</jakarta-mail.version>
 		<jakarta-activation.version>2.1.4</jakarta-activation.version>
-		<clustered-object-pool.version>4.0.2</clustered-object-pool.version>
+		<clustered-object-pool.version>4.0.3</clustered-object-pool.version>
 		<angus-mail.version>2.0.5</angus-mail.version>
 		<spring.version>6.2.19</spring.version>
 		<camel.version>4.21.0</camel.version>
 		<simple-java-mail.version>9.2.0</simple-java-mail.version>
 		<subethasmtp.version>7.2.2</subethasmtp.version>
 		<jspecify.version>1.0.0</jspecify.version>
-		<core.compatibility.version>3.1.0</core.compatibility.version>
-		<core.compatibility.sha256>75047205f0be99b6d1bffdabe761b794e02cbf1c74498f58c1aa696431d79de9</core.compatibility.sha256>
+		<core.compatibility.version>4.0.0</core.compatibility.version>
+		<core.compatibility.sha256>634c04c1221566e8a571c1aebbc6a5f0b745af583043d819bef3017a2f8b0f55</core.compatibility.sha256>
 	</properties>
 
 	<scm>
@@ -162,6 +163,46 @@
 			<plugins>
 				<plugin>
 					<groupId>org.apache.maven.plugins</groupId>
+					<artifactId>maven-jar-plugin</artifactId>
+					<version>3.4.2</version>
+				</plugin>
+				<plugin>
+					<groupId>org.apache.maven.plugins</groupId>
+					<artifactId>maven-antrun-plugin</artifactId>
+					<version>3.1.0</version>
+					<executions>
+						<execution>
+							<id>verify-automatic-module-name</id>
+							<phase>verify</phase>
+							<goals>
+								<goal>run</goal>
+							</goals>
+							<configuration>
+								<target>
+									<delete dir="${project.build.directory}/module-name-verification" quiet="true" />
+									<unzip src="${project.build.directory}/${project.build.finalName}.jar"
+										   dest="${project.build.directory}/module-name-verification">
+										<patternset>
+											<include name="META-INF/MANIFEST.MF" />
+										</patternset>
+									</unzip>
+									<loadfile property="packagedManifest"
+											  srcFile="${project.build.directory}/module-name-verification/META-INF/MANIFEST.MF" />
+									<fail message="Packaged JAR is missing Automatic-Module-Name: ${automaticModuleName}">
+										<condition>
+											<not>
+												<contains string="${packagedManifest}"
+														  substring="Automatic-Module-Name: ${automaticModuleName}" />
+											</not>
+										</condition>
+									</fail>
+								</target>
+							</configuration>
+						</execution>
+					</executions>
+				</plugin>
+				<plugin>
+					<groupId>org.apache.maven.plugins</groupId>
 					<artifactId>maven-compiler-plugin</artifactId>
 					<version>3.14.1</version>
 				</plugin>
@@ -194,6 +235,17 @@
 			</plugins>
 		</pluginManagement>
 		<plugins>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-jar-plugin</artifactId>
+				<configuration>
+					<archive>
+						<manifestEntries>
+							<Automatic-Module-Name>${automaticModuleName}</Automatic-Module-Name>
+						</manifestEntries>
+					</archive>
+				</configuration>
+			</plugin>
 			<plugin>
 				<groupId>org.jacoco</groupId>
 				<artifactId>jacoco-maven-plugin</artifactId>

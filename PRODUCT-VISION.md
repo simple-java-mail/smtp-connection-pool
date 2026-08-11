@@ -15,7 +15,7 @@ Start with the [demo project](smtp-connection-pool-demo/README.md), not the diag
 
 The smoke tests assert delivered messages, the number of physical connections opened, connection reuse, and zero active connections after shutdown. The demo is built and tested with the rest of the project but excluded from Maven Central, so Maven Central contains only the three modules listed below.
 
-There is intentionally no standalone path-2 demo before Simple Java Mail 10.0.0 releases the public API from #698. The Simple Java Mail 9.2.0 example includes `batch-module` only as internal support for its high-level `Mailer` and never calls an internal batch API. Once the supported path-2 API exists, its official runnable example will be added to this demo project and linked from the Simple Java Mail website.
+There is intentionally no standalone path-2 demo before Simple Java Mail 9.3.0 releases the public API from #698. The Simple Java Mail 9.2.0 example includes `batch-module` only as internal support for its high-level `Mailer` and never calls an internal batch API. Once the supported path-2 API is published, its official runnable example will be added to this demo project and linked from the Simple Java Mail website.
 
 ## Product promise
 
@@ -35,7 +35,7 @@ These are product choices, not a one-to-one count of Maven artifacts.
 | Path | Choose this when | Who manages the pool | Status |
 | --- | --- | --- | --- |
 | 1. Use `smtp-connection-pool` directly | The application or a higher-level library needs full control over clustering, selection, transport access, failure handling, and shutdown. Simple Java Mail itself uses this path. | The application or library | Available now |
-| 2. Use Simple Java Mail's `batch-module` directly | The application wants the batch executor and clustered pooling without the higher-level `EmailBuilder` and `Mailer` APIs. It still creates its own `MimeMessage` objects and sends them inside a safe transport callback. | Simple Java Mail's public batch API | Planned for Simple Java Mail 10.0.0 in [#698](https://github.com/bbottema/simple-java-mail/issues/698) |
+| 2. Use Simple Java Mail's `batch-module` directly | The application wants the batch executor and clustered pooling without the higher-level `EmailBuilder` and `Mailer` APIs. It still creates its own `MimeMessage` objects and sends them inside a safe transport callback. | Simple Java Mail's public batch API | Planned for Simple Java Mail 9.3.0 in [#698](https://github.com/bbottema/simple-java-mail/issues/698) |
 | 3. Use it as a Jakarta Mail `Transport` | A framework owns `Transport` acquisition and closing. Plain Jakarta Mail and Spring select the `smtppool` protocol; Camel uses a small adapter that makes the same selection. | `PooledTransport` | Available since 4.0.0 through [#10](https://github.com/simple-java-mail/smtp-connection-pool/issues/10) |
 
 Simple Java Mail remains on path 1 internally. It should reuse the common lease contract introduced by this work, but should not route its richer transport lifecycle through `PooledTransport`. Its public path-2 API keeps the raw lease internal and automatically releases or invalidates it around the caller's callback.
@@ -95,7 +95,7 @@ The contract exposes explicit `release()` and `invalidate()` outcomes. `AutoClos
 
 ## Jakarta provider contract
 
-The provider artifact registers the custom transport protocol `smtppool` through Jakarta Mail's provider metadata and supported `ServiceLoader` mechanism. Classpath discovery is implemented and tested. Full JPMS execution remains blocked by invalid legacy automatic-module names in the current transitive pool artifacts and is not claimed for the first provider release.
+The provider artifact registers the custom transport protocol `smtppool` through Jakarta Mail's provider metadata and supported `ServiceLoader` mechanism. Classpath discovery is implemented and tested. The 4.0.1 JPMS follow-up gives the core pool, provider, and Camel adapter stable automatic module names and consumes fixed generic/clustered pool releases; the build compiles an end-to-end module-path consumer over the full five-module chain.
 
 `PooledTransport` translates the standard lifecycle as follows:
 

@@ -15,6 +15,10 @@
 	<name>SMTP Connection Pool</name>
 	<description>Lightweight SMTP connection pool with clustering support and explicit lease lifecycle.</description>
 
+	<properties>
+		<automaticModuleName>org.simplejavamail.smtpconnectionpool</automaticModuleName>
+	</properties>
+
 	<dependencies>
 		<dependency>
 			<groupId>jakarta.mail</groupId>

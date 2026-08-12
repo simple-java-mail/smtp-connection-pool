@@ -1,6 +1,6 @@
 # Releasing smtp-connection-pool
 
-This repository follows the orchestration in Simple Java Mail's [maintainer workflow](https://github.com/bbottema/simple-java-mail/blob/master/MAINTAINER_WORKFLOW.md), adapted to this multi-module supporting library. This file is the authoritative local guide; `how to release.txt` is retained only as a pointer for old bookmarks.
+This repository follows the local [maintainer workflow](MAINTAINER_WORKFLOW.md), adapted from Simple Java Mail. This file is its release-specific companion for the multi-module artifact set; `how to release.txt` is retained only as a pointer for old bookmarks.
 
 The [real-server demo suite](smtp-connection-pool-demo/README.md) is executable release evidence, not ancillary sample code. It must remain prominent in user documentation, pass with the rest of the build, and stay out of Maven Central.
 

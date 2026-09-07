@@ -52,6 +52,7 @@ class SmtpClaimRecoveryTest {
         final AtomicReference<Thread> waitingThread = new AtomicReference<>();
         final AtomicReference<SmtpTransportLease> replacement = new AtomicReference<>();
         final SmtpTransportLease original = claim.call();
+        final Transport originalTransport = original.getTransport();
         try {
             final Future<SmtpTransportLease> waiting = executor.submit(() -> {
                 waitingThread.set(Thread.currentThread());
@@ -60,11 +61,11 @@ class SmtpClaimRecoveryTest {
                 return lease;
             });
             awaitBlockedClaim(waitingThread);
-            original.getTransport().close();
+            originalTransport.close();
             original.invalidate();
 
             final SmtpTransportLease recovered = waiting.get(2, SECONDS);
-            assertNotSame(original.getTransport(), recovered.getTransport());
+            assertNotSame(originalTransport, recovered.getTransport());
             assertTrue(recovered.getTransport().isConnected());
             assertEquals(1, pool.countLiveResources());
         } finally {

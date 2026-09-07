@@ -81,8 +81,8 @@ Starting with 4.0.1, every published JAR declares a stable `Automatic-Module-Nam
 | `smtp-connection-pool-jakarta-provider` | `org.simplejavamail.smtpconnectionpool.jakarta` |
 | `smtp-connection-pool-camel` | `org.simplejavamail.smtpconnectionpool.camel` |
 
-The transitive object-pool chain is stable as well: `generic-object-pool 2.4.2` declares
-`org.bbottema.genericobjectpool`, and `clustered-object-pool 4.0.3` declares
+The transitive object-pool chain is stable as well: `generic-object-pool 2.4.3` declares
+`org.bbottema.genericobjectpool`, and `clustered-object-pool 4.0.4` declares
 `org.bbottema.clusteredobjectpool`. The build inspects every packaged manifest and compiles a real
 module-path consumer requiring all five names.
 
@@ -96,7 +96,7 @@ The provider module lets Jakarta Mail, Spring, and Camel obtain pooled `Transpor
 <dependency>
     <groupId>org.simplejavamail</groupId>
     <artifactId>smtp-connection-pool</artifactId>
-    <version>4.0.1</version>
+    <version>4.0.2</version>
 </dependency>
 ```
 
@@ -192,7 +192,7 @@ Add the provider plus a physical Jakarta Mail implementation:
 <dependency>
     <groupId>org.simplejavamail</groupId>
     <artifactId>smtp-connection-pool-jakarta-provider</artifactId>
-    <version>4.0.1</version>
+    <version>4.0.2</version>
 </dependency>
 <dependency>
     <groupId>org.eclipse.angus</groupId>
@@ -230,7 +230,7 @@ Spring uses the same provider by configuring `JavaMailSenderImpl` with protocol 
 <dependency>
     <groupId>org.simplejavamail</groupId>
     <artifactId>smtp-connection-pool-camel</artifactId>
-    <version>4.0.1</version>
+    <version>4.0.2</version>
 </dependency>
 ```
 
@@ -255,20 +255,10 @@ Verification runs all module tests, the real-server demo smoke tests, SpotBugs, 
 
 [Simple Java Mail #699](https://github.com/bbottema/simple-java-mail/issues/699) may produce a faster physical transport. If it implements Jakarta Mail's synchronous `Transport` contract with one reusable physical session per instance, it can be selected beneath these paths just like Angus. If it instead uses Simple Java Mail's `CustomMailer`, it owns its own lifecycle and must not be stacked on this pool.
 
-## Release notes
+## Current release
 
-`4.0.1` (11 August 2026)
+`4.0.2` (7 September 2026)
 
-- [#11](https://github.com/simple-java-mail/smtp-connection-pool/issues/11): declare stable JPMS automatic module names for all three published JARs, consume the fixed object-pool module chain, inspect the packaged manifests, and compile an end-to-end module-path consumer.
+- [#28](https://github.com/simple-java-mail/smtp-connection-pool/issues/28): wake callers already waiting for a pooled SMTP connection when a failed connection is invalidated, through `clustered-object-pool 4.0.4` and `generic-object-pool 2.4.3`. Covers direct, clustered, and Jakarta provider usage without API or Java compatibility changes.
 
-`4.0.0` (10 August 2026)
-
-- [#10](https://github.com/simple-java-mail/smtp-connection-pool/issues/10): add the explicit lease API, optional `smtppool` Jakarta Mail provider, and separate Camel adapter without changing the existing `org.simplejavamail:smtp-connection-pool` dependency or direct API. Harden credential rotation and graceful/forced shutdown using `generic-object-pool 2.4.1` and `clustered-object-pool 4.0.2`.
-
-`3.1.0` (7 August 2026)
-
-- [#9](https://github.com/simple-java-mail/smtp-connection-pool/issues/9): resolve a current OAuth2 token whenever a physical SMTP transport is opened or reconnected.
-
-`3.0.1` (6 July 2026)
-
-- [#8](https://github.com/simple-java-mail/smtp-connection-pool/issues/8): update `clustered-object-pool` to 4.0.1 so clustered SMTP pools can use cluster-specific defaults.
+Older releases are recorded in [RELEASE.txt](RELEASE.txt).

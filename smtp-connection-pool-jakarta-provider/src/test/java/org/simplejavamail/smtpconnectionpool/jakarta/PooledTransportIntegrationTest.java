@@ -15,6 +15,8 @@ import jakarta.mail.internet.MimeMessage;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.simplejavamail.smtpconnectionpool.SmtpConnectionPool;
 
 import java.lang.ref.ReferenceQueue;
@@ -22,6 +24,8 @@ import java.lang.ref.WeakReference;
 import java.util.Properties;
 import java.util.ServiceLoader;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -35,6 +39,7 @@ import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 class PooledTransportIntegrationTest {
     private Session session;
@@ -188,6 +193,57 @@ class PooledTransportIntegrationTest {
         assertEquals(2, FakeTransport.connections.get());
         SmtpPoolRegistry.shutdown(session).get(5, TimeUnit.SECONDS);
         assertTrue(FakeTransport.closes.get() >= 2);
+    }
+
+    @ParameterizedTest
+    @CsvSource({"0,DISCONNECT", "1,DISCONNECT", "0,PARTIAL", "1,PARTIAL"})
+    void failedSendsWakeExistingProviderClaims(final int coreSize, final Failure failure) throws Exception {
+        session.getProperties().setProperty(SmtpPoolProperties.CORE_POOL_SIZE, Integer.toString(coreSize));
+        session.getProperties().setProperty(SmtpPoolProperties.MAX_POOL_SIZE, "1");
+        session.getProperties().setProperty(SmtpPoolProperties.CLAIM_TIMEOUT_MILLIS, "500");
+        final Transport failingTransport = session.getTransport(SmtpPoolProperties.PROTOCOL);
+        final Transport waitingTransport = session.getTransport(SmtpPoolProperties.PROTOCOL);
+        final ExecutorService executor = Executors.newSingleThreadExecutor();
+        final AtomicReference<Thread> waitingThread = new AtomicReference<>();
+        try {
+            failingTransport.connect("mail.example.test", 2525, "sender", "secret");
+            final Future<?> waiting = executor.submit(() -> {
+                waitingThread.set(Thread.currentThread());
+                waitingTransport.connect("mail.example.test", 2525, "sender", "secret");
+                return null;
+            });
+            awaitBlockedPoolClaim(waitingThread);
+            FakeTransport.failure = failure;
+            assertThrows(MessagingException.class, () -> failingTransport.sendMessage(message(), recipients()));
+            FakeTransport.failure = Failure.NONE;
+            failingTransport.close();
+
+            waiting.get(2, TimeUnit.SECONDS);
+            waitingTransport.sendMessage(message(), recipients());
+            assertEquals(failure == Failure.DISCONNECT ? 2 : 1, FakeTransport.instances.get());
+        } finally {
+            executor.shutdownNow();
+            assertTrue(executor.awaitTermination(3, TimeUnit.SECONDS));
+            failingTransport.close();
+            waitingTransport.close();
+        }
+    }
+
+    private static void awaitBlockedPoolClaim(final AtomicReference<Thread> thread) throws InterruptedException {
+        final long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(2);
+        while (System.nanoTime() < deadline) {
+            final Thread worker = thread.get();
+            if (worker != null && worker.getState() == Thread.State.TIMED_WAITING) {
+                for (StackTraceElement frame : worker.getStackTrace()) {
+                    if (frame.getClassName().equals("org.bbottema.genericobjectpool.GenericObjectPool")
+                            && frame.getMethodName().equals("waitForAvailableObjectOrTimeout")) {
+                        return;
+                    }
+                }
+            }
+            Thread.sleep(1);
+        }
+        fail("The provider did not reach the underlying pool's condition wait");
     }
 
     @Test

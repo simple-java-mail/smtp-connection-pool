@@ -4,6 +4,11 @@ https://github.com/simple-java-mail/smtp-connection-pool
 RELEASE NOTES SMTP Connection Pool
 
 
+v4.0.2 (07-Sep-2026)
+
+- #28: Wake callers already waiting for a pooled SMTP connection when a failed connection is invalidated, through clustered-object-pool 4.0.4 and generic-object-pool 2.4.3. Covers direct, clustered, and Jakarta provider usage without API or Java compatibility changes.
+
+
 v4.0.1 (11-Aug-2026)
 
 - #11: Declare stable JPMS automatic module names for the core pool, Jakarta Mail provider, and Camel adapter. Verify every packaged manifest and compile an end-to-end module-path consumer over generic-object-pool 2.4.2 and clustered-object-pool 4.0.3.

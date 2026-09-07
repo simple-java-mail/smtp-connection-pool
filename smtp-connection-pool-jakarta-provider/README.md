@@ -14,7 +14,7 @@ Start with the real-server [plain Jakarta Mail demo](../smtp-connection-pool-dem
 <dependency>
     <groupId>org.simplejavamail</groupId>
     <artifactId>smtp-connection-pool-jakarta-provider</artifactId>
-    <version>4.0.1</version>
+    <version>4.0.2</version>
 </dependency>
 ```
 

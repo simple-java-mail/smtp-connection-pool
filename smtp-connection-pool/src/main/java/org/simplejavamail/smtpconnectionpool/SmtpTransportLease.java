@@ -2,9 +2,12 @@ package org.simplejavamail.smtpconnectionpool;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import jakarta.mail.Session;
+import jakarta.mail.Transport;
 import org.bbottema.genericobjectpool.PoolableObject;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.Optional;
+import java.util.concurrent.CompletionStage;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
@@ -27,11 +30,39 @@ public final class SmtpTransportLease implements AutoCloseable {
 
     @NotNull private final PoolableObject<SessionTransport> claimedTransport;
     @NotNull private final AtomicReference<State> state = new AtomicReference<>(State.ACTIVE);
+    private final Optional<TransportCancellation> cancellation;
 
     /** Wraps an already claimed pool object as an exclusive SMTP lease. */
     @SuppressFBWarnings(value = "EI_EXPOSE_REP2", justification = "A lease deliberately owns the claimed pool handle until its terminal outcome.")
     public SmtpTransportLease(@NotNull final PoolableObject<SessionTransport> claimedTransport) {
         this.claimedTransport = claimedTransport;
+        cancellation = claimedTransport.getAllocatedObject().getAbortAction()
+                .map(action -> () -> requestAbort(action));
+    }
+
+    /**
+     * Returns physical-abort control only when the configured provider supports it. This handle belongs to this lease
+     * generation: retaining it after release cannot abort another borrower's connection.
+     *
+     * @return optional secondary cancellation capability
+     * @since 4.1.0
+     */
+    @NotNull
+    public Optional<TransportCancellation> getCancellation() {
+        return cancellation;
+    }
+
+    /**
+     * Acknowledges eventual disposal of this physical pool object, including a cleanup failure. Healthy release does
+     * not dispose the object, so this stage may remain pending until a later borrower invalidates it or the pool shuts
+     * down. It is neither email completion nor proof that arbitrary caller code has stopped using the transport.
+     *
+     * @return a detached completion stage that cannot cancel the pool's own cleanup
+     * @since 4.1.0
+     */
+    @NotNull
+    public CompletionStage<Void> getDisposalCompletion() {
+        return claimedTransport.getDisposalCompletion();
     }
 
     /** Returns the Session/Transport pair owned by this lease. */
@@ -48,7 +79,7 @@ public final class SmtpTransportLease implements AutoCloseable {
 
     /** Returns the physical Jakarta Mail transport owned exclusively by this lease. */
     @NotNull
-    public jakarta.mail.Transport getTransport() {
+    public Transport getTransport() {
         return getSessionTransport().getTransport();
     }
 
@@ -73,13 +104,9 @@ public final class SmtpTransportLease implements AutoCloseable {
             try {
                 claimedTransport.release();
                 return true;
-            } catch (RuntimeException releaseFailure) {
+            } catch (RuntimeException | Error releaseFailure) {
                 state.set(State.INVALIDATED);
-                try {
-                    claimedTransport.invalidate();
-                } catch (RuntimeException invalidationFailure) {
-                    releaseFailure.addSuppressed(invalidationFailure);
-                }
+                invalidateAfterFailure(releaseFailure);
                 throw releaseFailure;
             }
         }
@@ -105,5 +132,30 @@ public final class SmtpTransportLease implements AutoCloseable {
     @Override
     public void close() {
         release();
+    }
+
+    private boolean requestAbort(final Runnable action) {
+        // Winning this transition consumes the generation before any physical side effect can race with release.
+        if (!state.compareAndSet(State.ACTIVE, State.INVALIDATED)) {
+            return false;
+        }
+        try {
+            action.run();
+        } catch (RuntimeException | Error abortFailure) {
+            invalidateAfterFailure(abortFailure);
+            throw abortFailure;
+        }
+        claimedTransport.invalidate();
+        return true;
+    }
+
+    private void invalidateAfterFailure(final Throwable primaryFailure) {
+        try {
+            claimedTransport.invalidate();
+        } catch (RuntimeException | Error invalidationFailure) {
+            if (primaryFailure != invalidationFailure) {
+                primaryFailure.addSuppressed(invalidationFailure);
+            }
+        }
     }
 }

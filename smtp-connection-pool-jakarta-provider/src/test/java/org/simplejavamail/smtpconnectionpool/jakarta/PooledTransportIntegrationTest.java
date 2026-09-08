@@ -235,8 +235,8 @@ class PooledTransportIntegrationTest {
             final Thread worker = thread.get();
             if (worker != null && worker.getState() == Thread.State.TIMED_WAITING) {
                 for (StackTraceElement frame : worker.getStackTrace()) {
-                    if (frame.getClassName().equals("org.bbottema.genericobjectpool.GenericObjectPool")
-                            && frame.getMethodName().equals("waitForAvailableObjectOrTimeout")) {
+                    if (frame.getClassName().equals("org.bbottema.genericobjectpool.ClaimAttempt")
+                            && frame.getMethodName().equals("awaitAvailability")) {
                         return;
                     }
                 }

@@ -29,6 +29,7 @@ public class SmtpConnectionPoolClusteredTest extends SmtpConnectionPoolTestBase<
 		clusters.registerResourcePool(new ResourceClusterAndPoolKey<>(keyCluster1, createSessionPoolKeyForString("server_B")));
 		clusters.registerResourcePool(new ResourceClusterAndPoolKey<>(keyCluster2, createSessionPoolKeyForString("server_C")));
 		clusters.registerResourcePool(new ResourceClusterAndPoolKey<>(keyCluster2, createSessionPoolKeyForString("server_D")));
+		awaitCorePrefill(clusters, 16);
 
 		// first claim on a few specific servers
 		PoolableObject<SessionTransport> connectionA1 = clusters.claimResourceFromPool(new ResourceClusterAndPoolKey<>(keyCluster1, createSessionPoolKeyForString("server_A")));
@@ -66,6 +67,8 @@ public class SmtpConnectionPoolClusteredTest extends SmtpConnectionPoolTestBase<
 				.defaultCorePoolSize(1);
 		final SmtpConnectionPoolClustered<String> pool = new SmtpConnectionPoolClustered<>(smtpClusterConfig);
 		final String localBindAddress = "192.0.2.10";
+		pool.registerResourcePool(new ResourceClusterAndPoolKey<>(localBindAddress, createSessionPoolKeyForString("server_A")));
+		awaitCorePrefill(pool, 1);
 
 		final PoolableObject<SessionTransport> poolable = pool.claimResourceFromPool(
 				new ResourceClusterAndPoolKey<>(localBindAddress, createSessionPoolKeyForString("server_A")));

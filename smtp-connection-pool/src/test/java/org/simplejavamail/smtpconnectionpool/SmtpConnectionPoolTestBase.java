@@ -14,6 +14,9 @@ import org.junit.jupiter.api.BeforeEach;
 import java.util.HashMap;
 import java.util.Map;
 
+import static java.util.concurrent.TimeUnit.SECONDS;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
 import static java.lang.String.format;
 import static java.util.Objects.requireNonNull;
 import static org.mockito.Mockito.mock;
@@ -31,6 +34,15 @@ abstract class SmtpConnectionPoolTestBase<PoolType extends ResourceClusters<Clus
 	}
 	
 	abstract PoolType initClusters();
+
+	/** Exact FIFO resource identities in these tests require completed background prefill. */
+	static void awaitCorePrefill(final ResourceClusters<?, ?, ?> pool, final int expected) throws InterruptedException {
+		final long deadline = System.nanoTime() + SECONDS.toNanos(3);
+		while (pool.countLiveResources() != expected && System.nanoTime() < deadline) {
+			Thread.sleep(2);
+		}
+		assertEquals(expected, pool.countLiveResources());
+	}
 	
 	@SuppressWarnings("SameParameterValue")
 	String claimAndRelease(ClusterKey clusterKey) throws InterruptedException {

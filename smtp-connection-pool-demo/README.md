@@ -32,6 +32,19 @@ The examples follow the product order from the main README.
 
 Every scenario also verifies that the responsible application or framework leaves zero physical connections open after shutdown.
 
+## Stopped-job demo
+
+Run `ClaimCancellationDemo` to cancel a job waiting behind a pool-size-one lease. It uses `ClaimControl` and
+`ClaimOptions`, waits for the worker to actually finish, then sends one message using the original healthy connection.
+It is also included in `DemoLauncher` and the smoke tests. No physical-abort adapter is configured or required.
+
+```text
+Cancelled waiting job; healthy connection reused: delivered=1, physical connections=1, active after shutdown=0
+```
+
+This illustrates acquisition cancellation, not retracting an email already submitted to SMTP. See the root README's
+[capability table](../README.md#optional-physical-abort-of-an-owned-lease) for that separate boundary.
+
 ## Standalone batch-module demo
 
 `BatchModuleDemo` uses the public `BatchTransportExecutor` API released in Simple Java Mail 9.3.0. It registers a caller-owned Jakarta Mail `Session`, creates each `MimeMessage` with the Session actually selected by the cluster, and sends it inside the callback-scoped `Transport`. Normal callback completion releases the physical connection for reuse, and closing the executor shuts down the pool.

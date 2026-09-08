@@ -9,6 +9,7 @@ public final class DemoLauncher {
     public static void main(final String[] arguments) throws Exception {
         System.out.println(DirectPoolDemo.runReuse());
         System.out.println(DirectPoolDemo.runInvalidation());
+        System.out.println(ClaimCancellationDemo.run());
         System.out.println(SimpleJavaMailDemo.run());
         System.out.println(BatchModuleDemo.run());
         System.out.println(JakartaMailDemo.run());

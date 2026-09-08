@@ -10,6 +10,7 @@ v4.1.0 (08-Sep-2026)
 - #31: Add explicitly configured TransportCancellationSupport and secondary lease cancellation. Only the active lease can request physical abort; unsupported providers, including default Angus, expose no abort capability.
 - #31: Close partially created transports after failed or cancelled preparation and expose final disposal completion separately, including cleanup failures. Preserve existing claim/lease APIs, caller-owned Sessions, provider selection and Java/module baselines.
 - #31: Add a stopped-job demo that cancels waiting acquisition and reuses the healthy SMTP connection. Physical abort support does not imply that a submitted message was unsent.
+- #27: Update the optional Camel adapter to Camel 4.22.0, fixing CVE-2026-59230 in MIME multipart unmarshalling with headersInline=true. Retain Java 17 compatibility for the Camel adapter.
 
 
 v4.0.2 (07-Sep-2026)

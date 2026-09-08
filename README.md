@@ -69,7 +69,7 @@ All three published modules are released together at one version. Maven Central 
 | --- | --- | --- |
 | `org.simplejavamail:smtp-connection-pool` | Direct and clustered pool APIs plus `SmtpTransportLease` | 8+ |
 | `org.simplejavamail:smtp-connection-pool-jakarta-provider` | Discoverable `smtppool` Jakarta Mail provider and Session-scoped lifecycle registry | 8+ |
-| `org.simplejavamail:smtp-connection-pool-camel` | Optional Camel Mail selection adapter; pooling remains in the provider module | 17+ (Camel 4.21) |
+| `org.simplejavamail:smtp-connection-pool-camel` | Optional Camel Mail selection adapter; pooling remains in the provider module | 17+ (Camel 4.22) |
 
 ### JPMS module names
 
@@ -332,5 +332,6 @@ Verification runs all module tests, the real-server demo smoke tests, SpotBugs, 
 - [#31](https://github.com/simple-java-mail/smtp-connection-pool/issues/31): opt-in acquisition cancellation and total budgets, using `clustered-object-pool 4.1.0` and `generic-object-pool 2.5.0`. Existing calls, Java baselines and provider selection remain supported.
 - Optional provider-neutral physical abort with lease-scoped ownership and separate disposal acknowledgement. Angus physical abort remains unsupported; pending acquisition is independently useful.
 - Failed or cancelled connection preparation closes partially created transports. Cleanup failures remain observable, and the stopped-job demo shows subsequent healthy connection reuse.
+- [#27](https://github.com/simple-java-mail/smtp-connection-pool/pull/27): update the optional Camel adapter to Camel 4.22.0, fixing [CVE-2026-59230](https://camel.apache.org/security/CVE-2026-59230.html) in MIME multipart unmarshalling with `headersInline=true`. The Java 17 baseline is unchanged.
 
 Older releases are recorded in [RELEASE.txt](RELEASE.txt).

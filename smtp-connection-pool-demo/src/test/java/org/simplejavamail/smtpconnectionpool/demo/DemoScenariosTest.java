@@ -6,6 +6,14 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class DemoScenariosTest {
     @Test
+    void stoppedJobLeavesTheQueueWithoutClosingAnotherJobsConnection() throws Exception {
+        final DemoResult result = ClaimCancellationDemo.run();
+        assertEquals(1, result.getDeliveredMessages());
+        assertEquals(1, result.getPhysicalConnections());
+        assertEquals(0, result.getActiveConnectionsAfterShutdown());
+    }
+
+    @Test
     void directPoolReusesOneConnection() throws Exception {
         assertSuccessfulReuse(DirectPoolDemo.runReuse());
     }

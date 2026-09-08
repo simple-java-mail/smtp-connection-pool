@@ -6,6 +6,7 @@ import org.bbottema.clusteredobjectpool.core.ClusterConfig.ClusterConfigBuilder;
 import org.bbottema.genericobjectpool.expirypolicies.TimeoutSinceLastAllocationExpirationPolicy;
 
 import static java.util.concurrent.TimeUnit.SECONDS;
+import static java.util.Objects.requireNonNull;
 
 /**
  * Defines a preconfigured {@link ClusterConfig} builder with the following defaults:
@@ -33,6 +34,20 @@ public final class SmtpClusterConfig<ClusterKey> {
 
     public ClusterConfigBuilder<ClusterKey, Session, SessionTransport> getConfigBuilder() {
         return configBuilder;
+    }
+
+    /**
+     * Enables provider-specific physical abort for transports allocated by this configuration. No provider is assumed
+     * capable by default. Call this before building the pool; it replaces the allocator factory, just like configuring
+     * a factory through {@link #getConfigBuilder()}. Shared Sessions are not modified.
+     *
+     * @param support a thread-safe capability factory that returns empty for unsupported transports
+     * @return this configuration
+     * @since 4.1.0
+     */
+    public SmtpClusterConfig<ClusterKey> withTransportCancellationSupport(final TransportCancellationSupport support) {
+        configBuilder.allocatorFactory(new TransportAllocatorFactory<>(requireNonNull(support, "support")));
+        return this;
     }
 
     @Override

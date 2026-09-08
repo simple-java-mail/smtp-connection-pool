@@ -4,6 +4,9 @@ import jakarta.mail.MessagingException;
 import jakarta.mail.Session;
 import jakarta.mail.Transport;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
+import org.bbottema.genericobjectpool.ClaimOptions;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -27,6 +30,37 @@ import static org.simplejavamail.smtpconnectionpool.SmtpConnectionPool.OAUTH2_TO
 import static org.simplejavamail.smtpconnectionpool.SmtpConnectionPool.OAUTH2_TOKEN_PROVIDER_PROPERTY;
 
 public class TransportAllocatorTest {
+	@ParameterizedTest
+	@ValueSource(booleans = {false, true})
+	void partialConnectFailureClosesExactlyOnceAndRetainsBothFailures(final boolean controlled) throws Exception {
+		final Session session = session(new Properties());
+		final Transport transport = mock(Transport.class);
+		final MessagingException connectFailure = new MessagingException("connect failed");
+		final MessagingException closeFailure = new MessagingException("close failed");
+		when(session.getTransport()).thenReturn(transport);
+		doThrow(connectFailure).when(transport).connect();
+		doThrow(closeFailure).when(transport).close();
+		final TransportAllocator allocator = new TransportAllocator(session);
+		final TransportHandlingException failure = assertThrows(TransportHandlingException.class,
+				() -> { if (controlled) { allocator.allocate(ClaimOptions.withoutTimeout().start()); } else { allocator.allocate(); } });
+		assertSame(connectFailure, failure.getCause());
+		assertEquals(1, failure.getSuppressed().length);
+		assertSame(closeFailure, failure.getSuppressed()[0]);
+		verify(transport).close();
+	}
+
+	@Test
+	void aFailingCapabilityFactoryDoesNotOrphanTheNewTransport() throws Exception {
+		final Session session = session(new Properties());
+		final Transport transport = mock(Transport.class);
+		when(session.getTransport()).thenReturn(transport);
+		final IllegalStateException cause = new IllegalStateException("capability failed");
+		final TransportAllocator allocator = new TransportAllocator(session, ignored -> { throw cause; });
+		assertSame(cause, assertThrows(IllegalStateException.class, allocator::allocate));
+		verify(transport).close();
+		verify(transport, never()).connect();
+	}
+
 
 	@Test
 	public void allocateShouldResolveOAuth2TokenProviderAtConnectionTime()
@@ -140,13 +174,15 @@ public class TransportAllocatorTest {
 	}
 
 	@Test
-	public void deallocateShouldIgnoreTransportCloseFailures()
+	public void deallocateShouldExposeTransportCloseFailuresForDisposalAcknowledgement()
 			throws Exception {
 		final Session session = mock(Session.class);
 		final Transport transport = mock(Transport.class);
-		doThrow(new MessagingException("connection already closed")).when(transport).close();
+		final MessagingException failure = new MessagingException("connection already closed");
+		doThrow(failure).when(transport).close();
 
-		new TransportAllocator(session).deallocate(new SessionTransport(session, transport));
+		assertSame(failure, assertThrows(TransportHandlingException.class,
+				() -> new TransportAllocator(session).deallocate(new SessionTransport(session, transport))).getCause());
 
 		verify(transport).close();
 	}

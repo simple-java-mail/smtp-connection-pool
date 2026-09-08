@@ -4,6 +4,7 @@ import jakarta.mail.Session;
 import org.bbottema.clusteredobjectpool.core.ResourceClusters;
 import org.bbottema.clusteredobjectpool.core.api.ResourceKey.ResourcePoolKey;
 import org.bbottema.genericobjectpool.PoolableObject;
+import org.bbottema.genericobjectpool.ClaimOptions;
 
 import java.util.function.Supplier;
 
@@ -33,6 +34,23 @@ public class SmtpConnectionPool extends ResourceClusters<Session, Session, Sessi
      */
     public SmtpTransportLease claimTransport(final Session session) throws InterruptedException {
         final PoolableObject<SessionTransport> claimed = claimResourceFromPool(new ResourcePoolKey<>(session));
+        if (claimed == null) {
+            throw new IllegalStateException("Timed out waiting for an available SMTP transport");
+        }
+        return new SmtpTransportLease(claimed);
+    }
+
+    /**
+     * Claims with optional pending-acquisition cancellation and one total budget, also limited by the configured
+     * cluster timeout. Cancellation throws {@link java.util.concurrent.CancellationException}; timeout throws
+     * {@link IllegalStateException}, as with the original route. A running provider or credential callback must
+     * return cooperatively unless explicit transport cancellation support can abort it.
+     * Acquisition control ends at handoff; it cannot revoke the returned lease.
+     *
+     * @since 4.1.0
+     */
+    public SmtpTransportLease claimTransport(final Session session, final ClaimOptions options) throws InterruptedException {
+        final PoolableObject<SessionTransport> claimed = claimResourceFromPool(new ResourcePoolKey<>(session), options);
         if (claimed == null) {
             throw new IllegalStateException("Timed out waiting for an available SMTP transport");
         }

@@ -4,6 +4,14 @@ https://github.com/simple-java-mail/smtp-connection-pool
 RELEASE NOTES SMTP Connection Pool
 
 
+v4.1.0 (08-Sep-2026)
+
+- #31: Add opt-in ClaimOptions/ClaimControl on direct, keyed and load-balanced transport acquisition. One cooperative budget covers registration, selection, waiting and preparation, using clustered-object-pool 4.1.0 and generic-object-pool 2.5.0.
+- #31: Add explicitly configured TransportCancellationSupport and secondary lease cancellation. Only the active lease can request physical abort; unsupported providers, including default Angus, expose no abort capability.
+- #31: Close partially created transports after failed or cancelled preparation and expose final disposal completion separately, including cleanup failures. Preserve existing claim/lease APIs, caller-owned Sessions, provider selection and Java/module baselines.
+- #31: Add a stopped-job demo that cancels waiting acquisition and reuses the healthy SMTP connection. Physical abort support does not imply that a submitted message was unsent.
+
+
 v4.0.2 (07-Sep-2026)
 
 - #28: Wake callers already waiting for a pooled SMTP connection when a failed connection is invalidated, through clustered-object-pool 4.0.4 and generic-object-pool 2.4.3. Covers direct, clustered, and Jakarta provider usage without API or Java compatibility changes.

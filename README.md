@@ -81,8 +81,8 @@ Starting with 4.0.1, every published JAR declares a stable `Automatic-Module-Nam
 | `smtp-connection-pool-jakarta-provider` | `org.simplejavamail.smtpconnectionpool.jakarta` |
 | `smtp-connection-pool-camel` | `org.simplejavamail.smtpconnectionpool.camel` |
 
-The transitive object-pool chain is stable as well: `generic-object-pool 2.4.3` declares
-`org.bbottema.genericobjectpool`, and `clustered-object-pool 4.0.4` declares
+The transitive object-pool chain is stable as well: `generic-object-pool 2.5.0` declares
+`org.bbottema.genericobjectpool`, and `clustered-object-pool 4.1.0` declares
 `org.bbottema.clusteredobjectpool`. The build inspects every packaged manifest and compiles a real
 module-path consumer requiring all five names.
 
@@ -96,7 +96,7 @@ The provider module lets Jakarta Mail, Spring, and Camel obtain pooled `Transpor
 <dependency>
     <groupId>org.simplejavamail</groupId>
     <artifactId>smtp-connection-pool</artifactId>
-    <version>4.0.2</version>
+    <version>4.1.0</version>
 </dependency>
 ```
 
@@ -123,6 +123,76 @@ pool.shutDown().get();
 `claimTransport` can block and throws `InterruptedException`. Preserve the thread's interruption policy. The default pool is lazy, has a maximum of four physical connections per Session, and makes an available transport eligible for expiration ten seconds after its last claim.
 
 For partial-recipient failures, an advanced integration may release rather than invalidate only when the delegate is demonstrably still connected. Unknown failures should be treated conservatively.
+
+### Stop a job that is waiting for a connection
+
+Use the original `claimTransport(session)` unless the job needs cancellation or its own acquisition budget. For example,
+a user stops an export while every SMTP connection is busy: the export should leave the queue without closing another
+job's connection or shutting down the pool.
+
+```java
+ClaimControl control = new ClaimControl();
+ClaimOptions options = ClaimOptions.withTimeout(30, TimeUnit.SECONDS)
+    .withClaimControl(control);
+
+// On the job's worker:
+try (SmtpTransportLease lease = pool.claimTransport(session, options)) {
+    // Send using this lease; invalidate it on an uncertain transport failure, as above.
+}
+
+// From the job's Stop handler, on another thread:
+control.requestCancellation();
+```
+
+Both types come from `org.bbottema.genericobjectpool`. Creating a control does not request cancellation. A cancelled
+claim throws `CancellationException`; budget expiry throws `IllegalStateException`, matching the original SMTP-pool
+timeout result. Thread interruption remains `InterruptedException`. The same options work with clustered keyed and
+load-balanced claims.
+
+The budget starts before registration and selection, includes waiting and connection preparation, and is capped by the
+configured cluster timeout. It is cooperative, not a hard socket deadline: a running credential supplier, authenticator,
+DNS lookup or unsupported provider operation must return before the claim can settle. Late transports are disposed,
+not handed out. Keep provider connection/read/write timeouts configured as well.
+
+Once a lease is handed out, its acquisition control no longer owns it. Retaining or requesting that control cannot revoke
+the lease or affect its next borrower. The [stopped-job demo](smtp-connection-pool-demo/src/main/java/org/simplejavamail/smtpconnectionpool/demo/ClaimCancellationDemo.java)
+runs this scenario against a local SMTP server and then reuses the same connection for a healthy send.
+
+### Optional physical abort of an owned lease
+
+Physical abort needs provider support. The pool has no built-in Angus abort adapter. An integration that owns a capable
+physical provider can supply a `TransportCancellationSupport` through `SmtpClusterConfig.withTransportCancellationSupport(...)`.
+Its `createAbortAction(transport)` is called before connect and returns `Optional<Runnable>`: empty for unsupported
+transports, or a quick, thread-safe, latched abort action covering this transport's current and replacement sockets.
+Configure this before building the pool; it replaces the allocator factory. The caller-owned Session is never modified.
+
+```java
+Optional<TransportCancellation> cancellation = lease.getCancellation();
+if (cancellation.isPresent() && cancellation.get().request()) {
+    // Observe the actual send/connect operation exiting, and then its cleanup:
+    lease.getDisposalCompletion().toCompletableFuture().get();
+}
+```
+
+An effective request atomically marks the lease unusable before invoking the provider. A racing `close()` cannot release
+that connection as healthy, and an old lease's handle cannot abort a new borrower. An unsupported capability is absent,
+not a successful no-op. This API does not mean a message was unsent: keep the actual sending operation's result, including
+an accepted final reply that arrived before a late request.
+
+Disposal acknowledgement is separate from operation completion and preserves cleanup failures. It may remain pending
+after a healthy release until the physical object is eventually retired. Cancelling the returned stage cannot cancel the
+pool's cleanup. A raw borrowed `Transport` does not let the pool infer when arbitrary caller code has stopped using it.
+
+| Provider / route | Cancel pending pool waiting | Abort physical connect/send |
+| --- | --- | --- |
+| Angus plain SMTP | Yes, with claim options | Not built in; observed when the provider returns |
+| Angus STARTTLS or implicit TLS | Yes, with claim options | Not built in; TLS/socket replacement needs a provider-owned hook |
+| Angus HTTP/SOCKS proxy routing | Yes, with claim options | Not built in; routing and proxy authentication remain provider-owned |
+| Custom provider with configured cancellation support | Yes | Only within that provider's documented capability; must cover replacement sockets |
+| Unsupported custom provider | Yes | No; the optional lease capability is absent |
+| Jakarta `smtppool`, Spring and Camel integration | Existing interruptible waiting | No per-send control property; existing provider ownership stays unchanged |
+
+See [the Angus integration boundary](docs/transport-cancellation.md) for why `Transport.close()` is not an abort adapter.
 
 ### Clustered pools
 
@@ -192,7 +262,7 @@ Add the provider plus a physical Jakarta Mail implementation:
 <dependency>
     <groupId>org.simplejavamail</groupId>
     <artifactId>smtp-connection-pool-jakarta-provider</artifactId>
-    <version>4.0.2</version>
+    <version>4.1.0</version>
 </dependency>
 <dependency>
     <groupId>org.eclipse.angus</groupId>
@@ -230,7 +300,7 @@ Spring uses the same provider by configuring `JavaMailSenderImpl` with protocol 
 <dependency>
     <groupId>org.simplejavamail</groupId>
     <artifactId>smtp-connection-pool-camel</artifactId>
-    <version>4.0.2</version>
+    <version>4.1.0</version>
 </dependency>
 ```
 
@@ -249,7 +319,7 @@ Build the complete project with JDK 21 and Maven. The original pool and Jakarta 
 mvn clean verify
 ```
 
-Verification runs all module tests, the real-server demo smoke tests, SpotBugs, Javadocs, and a checksum-pinned japicmp comparison with the preceding published `4.0.0` library. CircleCI also compiles and tests the original pool plus Jakarta provider on an actual JDK 8. Its JDK 21 release job versions and publishes all public modules together while leaving out the demo.
+Verification runs all module tests, the real-server demo smoke tests, SpotBugs, Javadocs, and a checksum-pinned japicmp comparison with the preceding published `4.0.2` library. CircleCI also compiles and tests the original pool plus Jakarta provider on an actual JDK 8. Its JDK 21 release job versions and publishes all public modules together while leaving out the demo.
 
 ## Related custom transports
 
@@ -257,8 +327,10 @@ Verification runs all module tests, the real-server demo smoke tests, SpotBugs, 
 
 ## Current release
 
-`4.0.2` (7 September 2026)
+`4.1.0` (8 September 2026)
 
-- [#28](https://github.com/simple-java-mail/smtp-connection-pool/issues/28): wake callers already waiting for a pooled SMTP connection when a failed connection is invalidated, through `clustered-object-pool 4.0.4` and `generic-object-pool 2.4.3`. Covers direct, clustered, and Jakarta provider usage without API or Java compatibility changes.
+- [#31](https://github.com/simple-java-mail/smtp-connection-pool/issues/31): opt-in acquisition cancellation and total budgets, using `clustered-object-pool 4.1.0` and `generic-object-pool 2.5.0`. Existing calls, Java baselines and provider selection remain supported.
+- Optional provider-neutral physical abort with lease-scoped ownership and separate disposal acknowledgement. Angus physical abort remains unsupported; pending acquisition is independently useful.
+- Failed or cancelled connection preparation closes partially created transports. Cleanup failures remain observable, and the stopped-job demo shows subsequent healthy connection reuse.
 
 Older releases are recorded in [RELEASE.txt](RELEASE.txt).

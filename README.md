@@ -96,7 +96,7 @@ The provider module lets Jakarta Mail, Spring, and Camel obtain pooled `Transpor
 <dependency>
     <groupId>org.simplejavamail</groupId>
     <artifactId>smtp-connection-pool</artifactId>
-    <version>4.1.0</version>
+    <version>4.2.0</version>
 </dependency>
 ```
 
@@ -262,7 +262,7 @@ Add the provider plus a physical Jakarta Mail implementation:
 <dependency>
     <groupId>org.simplejavamail</groupId>
     <artifactId>smtp-connection-pool-jakarta-provider</artifactId>
-    <version>4.1.0</version>
+    <version>4.2.0</version>
 </dependency>
 <dependency>
     <groupId>org.eclipse.angus</groupId>
@@ -300,7 +300,7 @@ Spring uses the same provider by configuring `JavaMailSenderImpl` with protocol 
 <dependency>
     <groupId>org.simplejavamail</groupId>
     <artifactId>smtp-connection-pool-camel</artifactId>
-    <version>4.1.0</version>
+    <version>4.2.0</version>
 </dependency>
 ```
 
@@ -325,18 +325,11 @@ Verification runs all module tests, the real-server demo smoke tests, SpotBugs, 
 
 [Simple Java Mail #699](https://github.com/bbottema/simple-java-mail/issues/699) may produce a faster physical transport. If it implements Jakarta Mail's synchronous `Transport` contract with one reusable physical session per instance, it can be selected beneath these paths just like Angus. If it instead uses Simple Java Mail's `CustomMailer`, it owns its own lifecycle and must not be stacked on this pool.
 
-## Unreleased
+## Current release
+
+`4.2.0` (17 September 2026)
 
 - [#33](https://github.com/simple-java-mail/smtp-connection-pool/issues/33), [#34](https://github.com/simple-java-mail/smtp-connection-pool/pull/34): opt into age-based expiration with `mail.smtppool.pool.expiration-since-creation-millis` in the Jakarta provider and Camel adapter. The default `0` preserves the existing policy. Expiration is checked asynchronously while transports are available; it does not impose a hard connection-lifetime limit.
 - Update to `clustered-object-pool 4.1.1`, bringing in the timeout-policy equality fix from `generic-object-pool 2.5.1`. Creation-age and last-claim rules retain separate expiry state even with identical thresholds, using the standard combined policy ([upstream fix](https://github.com/bbottema/generic-object-pool/issues/24)). Existing APIs, Java baselines and module names remain supported.
-
-## Current release
-
-`4.1.0` (8 September 2026)
-
-- [#31](https://github.com/simple-java-mail/smtp-connection-pool/issues/31): opt-in acquisition cancellation and total budgets, using `clustered-object-pool 4.1.0` and `generic-object-pool 2.5.0`. Existing calls, Java baselines and provider selection remain supported.
-- Optional provider-neutral physical abort with lease-scoped ownership and separate disposal acknowledgement. Angus physical abort remains unsupported; pending acquisition is independently useful.
-- Failed or cancelled connection preparation closes partially created transports. Cleanup failures remain observable, and the stopped-job demo shows subsequent healthy connection reuse.
-- [#27](https://github.com/simple-java-mail/smtp-connection-pool/pull/27): update the optional Camel adapter to Camel 4.22.0, fixing [CVE-2026-59230](https://camel.apache.org/security/CVE-2026-59230.html) in MIME multipart unmarshalling with `headersInline=true`. The Java 17 baseline is unchanged.
 
 Older releases are recorded in [RELEASE.txt](RELEASE.txt).

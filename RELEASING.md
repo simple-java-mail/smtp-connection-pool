@@ -34,7 +34,7 @@ Do not create a due-date-free milestone merely to reserve a version. If the date
 
 ## 2. Prepare and verify
 
-1. Verify that the exact `generic-object-pool` and `clustered-object-pool` versions declared in the root POM are published in Maven Central. For 4.1.0 these are `generic-object-pool 2.5.0` and `clustered-object-pool 4.1.0`, which also provide the stable JPMS names used by this release; do not release against local-only substitutes.
+1. Verify that the exact `generic-object-pool` and `clustered-object-pool` versions declared in the root POM are published in Maven Central. For 4.2.0 these are `generic-object-pool 2.5.1` and `clustered-object-pool 4.1.1`, which also provide the stable JPMS names used by this release; do not release against local-only substitutes.
 2. Update `RELEASE.txt`, the README release-note summary, Javadocs, and directly relevant usage examples.
 3. Keep the current released version accurate; add a separate next-release section rather than relabeling an already published version as unreleased.
 4. Run the complete multi-module verification on JDK 21, without skipping static analysis, including provider discovery and all framework integration tests.

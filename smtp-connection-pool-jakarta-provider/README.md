@@ -93,8 +93,14 @@ The resolver branch takes precedence over a configured `Provider`, which takes p
 | `mail.smtppool.pool.max-size` | integer | `4` | Maximum physical connections per identity |
 | `mail.smtppool.pool.claim-timeout-millis` | long | `30000` | Maximum wait for an exclusive lease |
 | `mail.smtppool.pool.expiration-millis` | long | `10000` | Eligibility threshold measured since an available transport's last claim |
+| `mail.smtppool.pool.expiration-since-creation-millis` | long | `0` | Eligibility threshold measured since an available pooled transport was created; `0` disables age-based expiration |
 
 Provider and resolver values are objects placed with `Properties.put`, not strings loaded from a properties file.
+
+When age-based expiration is enabled, either expiration threshold makes an available transport eligible for retirement.
+The pool checks asynchronously and never expires an active lease. A transport can be reclaimed before it is checked,
+so this setting does not impose a strict maximum connection lifetime or guarantee retirement before a server's age
+limit. At the default `0`, the existing last-claim-only policy is used. Negative age thresholds are rejected.
 
 Endpoint identity includes the Session-scoped manager, normalized delegate protocol and resolved provider metadata, host, effective port, username, and an HMAC credential fingerprint. Raw passwords/tokens are excluded from equality and `toString` and retained only while needed for reconnect/allocation. When credentials rotate, the new generation becomes current immediately; the superseded pool accepts no new claims, drains existing leases, and then clears its credential material and retained pool record. Remaining material is cleared on Session-pool shutdown.
 

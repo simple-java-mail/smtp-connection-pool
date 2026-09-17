@@ -4,6 +4,12 @@ https://github.com/simple-java-mail/smtp-connection-pool
 RELEASE NOTES SMTP Connection Pool
 
 
+Unreleased
+
+- #33, #34: Add mail.smtppool.pool.expiration-since-creation-millis to the Jakarta provider and Camel configuration. The default 0 keeps age-based expiration disabled; negative values are rejected. Either the last-claim or creation-age threshold makes an available transport eligible for asynchronous retirement. Active leases are not expired, and rapid reuse can delay retirement beyond the threshold.
+- #34: Update clustered-object-pool to 4.1.1 and transitively generic-object-pool to 2.5.1, fixing equality between different timeout-policy types with matching thresholds (bbottema/generic-object-pool#24, bbottema/generic-object-pool#25). Use the upstream CombinedExpirationPolicies so both rules and their expiry state remain distinct. Existing APIs, Java baselines and JPMS automatic module names remain supported.
+
+
 v4.1.0 (08-Sep-2026)
 
 - #31: Add opt-in ClaimOptions/ClaimControl on direct, keyed and load-balanced transport acquisition. One cooperative budget covers registration, selection, waiting and preparation, using clustered-object-pool 4.1.0 and generic-object-pool 2.5.0.

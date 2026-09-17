@@ -10,7 +10,10 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.bbottema.clusteredobjectpool.core.ClusterConfig;
 import org.bbottema.clusteredobjectpool.core.ResourceClusters;
 import org.bbottema.clusteredobjectpool.core.api.ResourceKey.ResourceClusterAndPoolKey;
+import org.bbottema.genericobjectpool.ExpirationPolicy;
 import org.bbottema.genericobjectpool.PoolableObject;
+import org.bbottema.genericobjectpool.expirypolicies.CombinedExpirationPolicies;
+import org.bbottema.genericobjectpool.expirypolicies.TimeoutSinceCreationExpirationPolicy;
 import org.bbottema.genericobjectpool.expirypolicies.TimeoutSinceLastAllocationExpirationPolicy;
 import org.bbottema.genericobjectpool.util.Timeout;
 import org.simplejavamail.smtpconnectionpool.SessionTransport;
@@ -22,6 +25,7 @@ import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.IdentityHashMap;
 import java.util.Locale;
 import java.util.Map;
@@ -74,7 +78,10 @@ public final class SmtpPoolManager {
                 SmtpPoolProperties.DEFAULT_CLAIM_TIMEOUT_MILLIS);
         final long expiration = longProperty(SmtpPoolProperties.EXPIRATION_MILLIS,
                 SmtpPoolProperties.DEFAULT_EXPIRATION_MILLIS);
-        if (coreSize < 0 || maxSize < 1 || coreSize > maxSize || claimTimeout < 0 || expiration < 0) {
+        final long expirationSinceCreation = longProperty(SmtpPoolProperties.EXPIRATION_SINCE_CREATION_MILLIS,
+                SmtpPoolProperties.DEFAULT_EXPIRATION_SINCE_CREATION_MILLIS);
+        if (coreSize < 0 || maxSize < 1 || coreSize > maxSize || claimTimeout < 0 || expiration < 0
+                || expirationSinceCreation < 0) {
             throw new IllegalArgumentException("Invalid smtppool sizing or timeout configuration");
         }
 
@@ -82,8 +89,7 @@ public final class SmtpPoolManager {
         final ClusterConfig<String, ConnectionPoolKey, SessionTransport> config =
                 ClusterConfig.<String, ConnectionPoolKey, SessionTransport>builder()
                         .allocatorFactory(allocatorFactory)
-                        .defaultExpirationPolicy(new TimeoutSinceLastAllocationExpirationPolicy<SessionTransport>(
-                                expiration, TimeUnit.MILLISECONDS))
+                        .defaultExpirationPolicy(expirationPolicy(expiration, expirationSinceCreation))
                         .defaultCorePoolSize(coreSize)
                         .defaultMaxPoolSize(maxSize)
                         .claimTimeout(new Timeout(claimTimeout, TimeUnit.MILLISECONDS))
@@ -435,6 +441,25 @@ public final class SmtpPoolManager {
                 session.getProperties().put(SmtpPoolProperties.REGISTRY_SHUTDOWN, Boolean.TRUE);
             }
         }
+    }
+
+    /**
+     * Combines the idle threshold with an optional age-since-creation threshold. A transport expires when either
+     * rule matches; an age threshold of {@code 0} preserves the historical idle-only behaviour exactly.
+     */
+    static ExpirationPolicy<SessionTransport> expirationPolicy(final long expirationMillis,
+                                                              final long expirationSinceCreationMillis) {
+        final ExpirationPolicy<SessionTransport> idlePolicy =
+                new TimeoutSinceLastAllocationExpirationPolicy<SessionTransport>(expirationMillis,
+                        TimeUnit.MILLISECONDS);
+        if (expirationSinceCreationMillis == 0L) {
+            return idlePolicy;
+        }
+        final Set<ExpirationPolicy<SessionTransport>> policies = new HashSet<ExpirationPolicy<SessionTransport>>();
+        policies.add(idlePolicy);
+        policies.add(new TimeoutSinceCreationExpirationPolicy<SessionTransport>(expirationSinceCreationMillis,
+                TimeUnit.MILLISECONDS));
+        return new CombinedExpirationPolicies<SessionTransport>(policies);
     }
 
     private static String firstNonBlank(final String... candidates) {

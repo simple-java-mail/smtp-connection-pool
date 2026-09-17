@@ -81,8 +81,8 @@ Starting with 4.0.1, every published JAR declares a stable `Automatic-Module-Nam
 | `smtp-connection-pool-jakarta-provider` | `org.simplejavamail.smtpconnectionpool.jakarta` |
 | `smtp-connection-pool-camel` | `org.simplejavamail.smtpconnectionpool.camel` |
 
-The transitive object-pool chain is stable as well: `generic-object-pool 2.5.0` declares
-`org.bbottema.genericobjectpool`, and `clustered-object-pool 4.1.0` declares
+The transitive object-pool chain is stable as well: `generic-object-pool` declares
+`org.bbottema.genericobjectpool`, and `clustered-object-pool` declares
 `org.bbottema.clusteredobjectpool`. The build inspects every packaged manifest and compiles a real
 module-path consumer requiring all five names.
 
@@ -324,6 +324,11 @@ Verification runs all module tests, the real-server demo smoke tests, SpotBugs, 
 ## Related custom transports
 
 [Simple Java Mail #699](https://github.com/bbottema/simple-java-mail/issues/699) may produce a faster physical transport. If it implements Jakarta Mail's synchronous `Transport` contract with one reusable physical session per instance, it can be selected beneath these paths just like Angus. If it instead uses Simple Java Mail's `CustomMailer`, it owns its own lifecycle and must not be stacked on this pool.
+
+## Unreleased
+
+- [#33](https://github.com/simple-java-mail/smtp-connection-pool/issues/33), [#34](https://github.com/simple-java-mail/smtp-connection-pool/pull/34): opt into age-based expiration with `mail.smtppool.pool.expiration-since-creation-millis` in the Jakarta provider and Camel adapter. The default `0` preserves the existing policy. Expiration is checked asynchronously while transports are available; it does not impose a hard connection-lifetime limit.
+- Update to `clustered-object-pool 4.1.1`, bringing in the timeout-policy equality fix from `generic-object-pool 2.5.1`. Creation-age and last-claim rules retain separate expiry state even with identical thresholds, using the standard combined policy ([upstream fix](https://github.com/bbottema/generic-object-pool/issues/24)). Existing APIs, Java baselines and module names remain supported.
 
 ## Current release
 

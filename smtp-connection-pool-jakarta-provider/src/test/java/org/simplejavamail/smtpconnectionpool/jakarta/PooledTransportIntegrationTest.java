@@ -485,6 +485,43 @@ class PooledTransportIntegrationTest {
     }
 
     @Test
+    void ageBasedExpirationRetiresAnAvailableTransportBeforeTheIdleThreshold() throws Exception {
+        session.getProperties().setProperty(SmtpPoolProperties.EXPIRATION_MILLIS, "60000");
+        session.getProperties().setProperty(SmtpPoolProperties.EXPIRATION_SINCE_CREATION_MILLIS, "50");
+        sendOnce("secret");
+        assertEquals(1, FakeTransport.instances.get());
+
+        // The idle threshold cannot fire within this window, so a retirement here can only come from the age rule.
+        final SmtpPoolManager manager = SmtpPoolRegistry.getOrCreate(session);
+        for (int attempt = 0; attempt < 200 && manager.getLiveTransportCount() > 0; attempt++) {
+            Thread.sleep(25L);
+        }
+        assertEquals(0, manager.getLiveTransportCount());
+
+        sendOnce("secret");
+        assertEquals(2, FakeTransport.instances.get());
+    }
+
+    @Test
+    void anUnsetAgeThresholdLeavesIdleOnlyExpirationBehaviourUnchanged() throws Exception {
+        session.getProperties().setProperty(SmtpPoolProperties.EXPIRATION_MILLIS, "60000");
+        sendOnce("secret");
+
+        final SmtpPoolManager manager = SmtpPoolRegistry.getOrCreate(session);
+        Thread.sleep(300L);
+
+        assertEquals(1, manager.getLiveTransportCount());
+        sendOnce("secret");
+        assertEquals(1, FakeTransport.instances.get());
+    }
+
+    @Test
+    void aNegativeAgeThresholdIsRejectedWhenTheManagerIsCreated() {
+        session.getProperties().setProperty(SmtpPoolProperties.EXPIRATION_SINCE_CREATION_MILLIS, "-1");
+        assertThrows(IllegalArgumentException.class, () -> SmtpPoolRegistry.getOrCreate(session));
+    }
+
+    @Test
     void interruptedPoolClaimPreservesTheWaiterInterruptFlag() throws Exception {
         session.getProperties().setProperty(SmtpPoolProperties.MAX_POOL_SIZE, "1");
         session.getProperties().setProperty(SmtpPoolProperties.CLAIM_TIMEOUT_MILLIS, "5000");

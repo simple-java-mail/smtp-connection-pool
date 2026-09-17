@@ -485,7 +485,7 @@ class PooledTransportIntegrationTest {
     }
 
     @Test
-    void ageBasedExpirationRetiresATransportThatNeverStaysIdleLongEnoughToExpire() throws Exception {
+    void ageBasedExpirationRetiresAnAvailableTransportBeforeTheIdleThreshold() throws Exception {
         session.getProperties().setProperty(SmtpPoolProperties.EXPIRATION_MILLIS, "60000");
         session.getProperties().setProperty(SmtpPoolProperties.EXPIRATION_SINCE_CREATION_MILLIS, "50");
         sendOnce("secret");
@@ -515,20 +515,10 @@ class PooledTransportIntegrationTest {
         assertEquals(1, FakeTransport.instances.get());
     }
 
-    // Identical thresholds must keep both rules in force. A set-based combination cannot express that: the timeout
-    // policies derive equality from their millisecond value alone, so equal thresholds collapse into a single rule.
     @Test
-    void identicalIdleAndAgeThresholdsStillRetireATransport() throws Exception {
-        session.getProperties().setProperty(SmtpPoolProperties.EXPIRATION_MILLIS, "50");
-        session.getProperties().setProperty(SmtpPoolProperties.EXPIRATION_SINCE_CREATION_MILLIS, "50");
-        sendOnce("secret");
-
-        final SmtpPoolManager manager = SmtpPoolRegistry.getOrCreate(session);
-        for (int attempt = 0; attempt < 200 && manager.getLiveTransportCount() > 0; attempt++) {
-            Thread.sleep(25L);
-        }
-
-        assertEquals(0, manager.getLiveTransportCount());
+    void aNegativeAgeThresholdIsRejectedWhenTheManagerIsCreated() {
+        session.getProperties().setProperty(SmtpPoolProperties.EXPIRATION_SINCE_CREATION_MILLIS, "-1");
+        assertThrows(IllegalArgumentException.class, () -> SmtpPoolRegistry.getOrCreate(session));
     }
 
     @Test

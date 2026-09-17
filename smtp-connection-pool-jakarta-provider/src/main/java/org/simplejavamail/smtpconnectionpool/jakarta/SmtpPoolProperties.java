@@ -31,7 +31,10 @@ public final class SmtpPoolProperties {
     public static final String CLAIM_TIMEOUT_MILLIS = "mail.smtppool.pool.claim-timeout-millis";
     /** Expiration threshold in milliseconds measured since an available transport's last claim. */
     public static final String EXPIRATION_MILLIS = "mail.smtppool.pool.expiration-millis";
-    /** Expiration threshold in milliseconds measured since a physical transport was created; {@code 0} disables it. */
+    /**
+     * Expiration eligibility threshold in milliseconds since a pooled transport was created; {@code 0} disables it.
+     * Checked asynchronously while the transport is available, so this is not a strict connection-lifetime limit.
+     */
     public static final String EXPIRATION_SINCE_CREATION_MILLIS = "mail.smtppool.pool.expiration-since-creation-millis";
 
     /** Default core pool size. */

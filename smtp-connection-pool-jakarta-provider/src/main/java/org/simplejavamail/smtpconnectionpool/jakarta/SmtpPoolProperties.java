@@ -31,6 +31,8 @@ public final class SmtpPoolProperties {
     public static final String CLAIM_TIMEOUT_MILLIS = "mail.smtppool.pool.claim-timeout-millis";
     /** Expiration threshold in milliseconds measured since an available transport's last claim. */
     public static final String EXPIRATION_MILLIS = "mail.smtppool.pool.expiration-millis";
+    /** Expiration threshold in milliseconds measured since a physical transport was created; {@code 0} disables it. */
+    public static final String EXPIRATION_SINCE_CREATION_MILLIS = "mail.smtppool.pool.expiration-since-creation-millis";
 
     /** Default core pool size. */
     public static final int DEFAULT_CORE_POOL_SIZE = 0;
@@ -40,6 +42,8 @@ public final class SmtpPoolProperties {
     public static final long DEFAULT_CLAIM_TIMEOUT_MILLIS = 30_000L;
     /** Default available-transport expiration threshold in milliseconds. */
     public static final long DEFAULT_EXPIRATION_MILLIS = 10_000L;
+    /** Default age-based expiration threshold in milliseconds; {@code 0} keeps age-based expiration disabled. */
+    public static final long DEFAULT_EXPIRATION_SINCE_CREATION_MILLIS = 0L;
 
     private SmtpPoolProperties() {
     }

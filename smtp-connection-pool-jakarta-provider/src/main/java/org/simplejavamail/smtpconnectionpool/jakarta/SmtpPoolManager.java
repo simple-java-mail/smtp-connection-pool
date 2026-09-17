@@ -10,7 +10,9 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.bbottema.clusteredobjectpool.core.ClusterConfig;
 import org.bbottema.clusteredobjectpool.core.ResourceClusters;
 import org.bbottema.clusteredobjectpool.core.api.ResourceKey.ResourceClusterAndPoolKey;
+import org.bbottema.genericobjectpool.ExpirationPolicy;
 import org.bbottema.genericobjectpool.PoolableObject;
+import org.bbottema.genericobjectpool.expirypolicies.TimeoutSinceCreationExpirationPolicy;
 import org.bbottema.genericobjectpool.expirypolicies.TimeoutSinceLastAllocationExpirationPolicy;
 import org.bbottema.genericobjectpool.util.Timeout;
 import org.simplejavamail.smtpconnectionpool.SessionTransport;
@@ -74,7 +76,10 @@ public final class SmtpPoolManager {
                 SmtpPoolProperties.DEFAULT_CLAIM_TIMEOUT_MILLIS);
         final long expiration = longProperty(SmtpPoolProperties.EXPIRATION_MILLIS,
                 SmtpPoolProperties.DEFAULT_EXPIRATION_MILLIS);
-        if (coreSize < 0 || maxSize < 1 || coreSize > maxSize || claimTimeout < 0 || expiration < 0) {
+        final long expirationSinceCreation = longProperty(SmtpPoolProperties.EXPIRATION_SINCE_CREATION_MILLIS,
+                SmtpPoolProperties.DEFAULT_EXPIRATION_SINCE_CREATION_MILLIS);
+        if (coreSize < 0 || maxSize < 1 || coreSize > maxSize || claimTimeout < 0 || expiration < 0
+                || expirationSinceCreation < 0) {
             throw new IllegalArgumentException("Invalid smtppool sizing or timeout configuration");
         }
 
@@ -82,8 +87,7 @@ public final class SmtpPoolManager {
         final ClusterConfig<String, ConnectionPoolKey, SessionTransport> config =
                 ClusterConfig.<String, ConnectionPoolKey, SessionTransport>builder()
                         .allocatorFactory(allocatorFactory)
-                        .defaultExpirationPolicy(new TimeoutSinceLastAllocationExpirationPolicy<SessionTransport>(
-                                expiration, TimeUnit.MILLISECONDS))
+                        .defaultExpirationPolicy(expirationPolicy(expiration, expirationSinceCreation))
                         .defaultCorePoolSize(coreSize)
                         .defaultMaxPoolSize(maxSize)
                         .claimTimeout(new Timeout(claimTimeout, TimeUnit.MILLISECONDS))
@@ -434,6 +438,49 @@ public final class SmtpPoolManager {
             if (session.getProperties().get(SmtpPoolProperties.MANAGER) == this) {
                 session.getProperties().put(SmtpPoolProperties.REGISTRY_SHUTDOWN, Boolean.TRUE);
             }
+        }
+    }
+
+    /**
+     * Combines the idle threshold with an optional age-since-creation threshold. A transport expires when either
+     * rule matches; an age threshold of {@code 0} preserves the historical idle-only behaviour exactly.
+     * <p>
+     * {@code CombinedExpirationPolicies} is deliberately not used here: it holds its members in a {@link java.util.Set},
+     * while {@code TimeoutExpirationPolicy} derives equality from {@code expiryAgeMs} alone and its subclasses add no
+     * equality of their own. Two different rules configured to the same number of milliseconds therefore compare equal
+     * and one of them is silently dropped from the set.
+     */
+    private static ExpirationPolicy<SessionTransport> expirationPolicy(final long expirationMillis,
+                                                                      final long expirationSinceCreationMillis) {
+        final ExpirationPolicy<SessionTransport> idlePolicy =
+                new TimeoutSinceLastAllocationExpirationPolicy<SessionTransport>(expirationMillis,
+                        TimeUnit.MILLISECONDS);
+        if (expirationSinceCreationMillis == 0L) {
+            return idlePolicy;
+        }
+        return new EitherExpirationPolicy<SessionTransport>(idlePolicy,
+                new TimeoutSinceCreationExpirationPolicy<SessionTransport>(expirationSinceCreationMillis,
+                        TimeUnit.MILLISECONDS));
+    }
+
+    /** Expires a pooled object as soon as either of two independent rules considers it expired. */
+    private static final class EitherExpirationPolicy<T> implements ExpirationPolicy<T> {
+        private final ExpirationPolicy<T> first;
+        private final ExpirationPolicy<T> second;
+
+        EitherExpirationPolicy(final ExpirationPolicy<T> first, final ExpirationPolicy<T> second) {
+            this.first = first;
+            this.second = second;
+        }
+
+        @Override
+        public boolean hasExpired(final PoolableObject<T> poolableObject) {
+            return first.hasExpired(poolableObject) || second.hasExpired(poolableObject);
+        }
+
+        @Override
+        public String toString() {
+            return "EitherExpirationPolicy(" + first + ", " + second + ")";
         }
     }
 

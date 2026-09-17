@@ -43,6 +43,16 @@ to("smtppool://smtp.example.com:2525"
         + "&username=user&password=secret&to=recipient@example.com");
 ```
 
+Pool tuning properties reach the pool the same way. Servers that enforce a maximum connection lifetime — Exchange
+Online resets a connection after 20 minutes regardless of activity — need the age-based threshold, because a
+continuously used connection never becomes idle long enough for the idle threshold to retire it:
+
+```java
+to("smtppool://smtp.example.com:587"
+        + "?mail.smtppool.pool.expiration-since-creation-millis=900000"
+        + "&username=user&password=secret&to=recipient@example.com");
+```
+
 Internally created Jakarta Mail Sessions are tracked and shut down gracefully when the Camel component stops. Camel waits up to 30 seconds; on timeout or interruption it escalates to forced shutdown and also waits for physical cleanup before stop returns. If an externally supplied Session is used, its owner must call `SmtpPoolRegistry.shutdown(session)`.
 
 Ordinary Camel `smtp:`/`smtps:` components and ordinary Jakarta Mail `session.getTransport("smtp")` lookups are untouched. The adapter does not register `PooledTransport` as `smtp`; it asks Camel to use `smtppool` explicitly.

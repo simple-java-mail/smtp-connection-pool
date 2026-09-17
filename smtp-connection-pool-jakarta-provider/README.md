@@ -93,6 +93,7 @@ The resolver branch takes precedence over a configured `Provider`, which takes p
 | `mail.smtppool.pool.max-size` | integer | `4` | Maximum physical connections per identity |
 | `mail.smtppool.pool.claim-timeout-millis` | long | `30000` | Maximum wait for an exclusive lease |
 | `mail.smtppool.pool.expiration-millis` | long | `10000` | Eligibility threshold measured since an available transport's last claim |
+| `mail.smtppool.pool.expiration-since-creation-millis` | long | `0` | Eligibility threshold measured since a transport was created; `0` disables age-based expiration |
 
 Provider and resolver values are objects placed with `Properties.put`, not strings loaded from a properties file.
 

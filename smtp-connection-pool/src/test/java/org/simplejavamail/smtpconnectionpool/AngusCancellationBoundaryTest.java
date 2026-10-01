@@ -44,6 +44,9 @@ class AngusCancellationBoundaryTest {
             final Properties properties = new Properties();
             properties.setProperty("mail.smtp.timeout", "5000");
             properties.setProperty("mail.smtp.connectiontimeout", "5000");
+            // Keep EHLO and MIME Message-ID generation independent of the workstation's hostname/DNS lookup.
+            properties.setProperty("mail.smtp.localhost", "localhost");
+            properties.setProperty("mail.from", "sender@example.org");
             final Session session = Session.getInstance(properties);
             try (SMTPTransport transport = new SMTPTransport(session, null)) {
                 transport.connect(server.getInetAddress().getHostAddress(), server.getLocalPort(), null, null);

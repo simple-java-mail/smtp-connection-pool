@@ -40,6 +40,13 @@ public final class SmtpTransportLease implements AutoCloseable {
                 .map(action -> () -> requestAbort(action));
     }
 
+    static SmtpTransportLease leaseOrThrow(final PoolableObject<SessionTransport> claimed) {
+        if (claimed == null) {
+            throw new IllegalStateException("Timed out waiting for an available SMTP transport");
+        }
+        return new SmtpTransportLease(claimed);
+    }
+
     /**
      * Returns physical-abort control only when the configured provider supports it. This handle belongs to this lease
      * generation: retaining it after release cannot abort another borrower's connection.

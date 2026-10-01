@@ -96,7 +96,7 @@ The provider module lets Jakarta Mail, Spring, and Camel obtain pooled `Transpor
 <dependency>
     <groupId>org.simplejavamail</groupId>
     <artifactId>smtp-connection-pool</artifactId>
-    <version>4.2.0</version>
+    <version>4.3.0</version>
 </dependency>
 ```
 
@@ -262,7 +262,7 @@ Add the provider plus a physical Jakarta Mail implementation:
 <dependency>
     <groupId>org.simplejavamail</groupId>
     <artifactId>smtp-connection-pool-jakarta-provider</artifactId>
-    <version>4.2.0</version>
+    <version>4.3.0</version>
 </dependency>
 <dependency>
     <groupId>org.eclipse.angus</groupId>
@@ -300,7 +300,7 @@ Spring uses the same provider by configuring `JavaMailSenderImpl` with protocol 
 <dependency>
     <groupId>org.simplejavamail</groupId>
     <artifactId>smtp-connection-pool-camel</artifactId>
-    <version>4.2.0</version>
+    <version>4.3.0</version>
 </dependency>
 ```
 
@@ -327,9 +327,37 @@ Verification runs all module tests, the real-server demo smoke tests, SpotBugs, 
 
 ## Current release
 
-`4.2.0` (17 September 2026)
+`4.3.0` (1 October 2026)
 
-- [#33](https://github.com/simple-java-mail/smtp-connection-pool/issues/33), [#34](https://github.com/simple-java-mail/smtp-connection-pool/pull/34): opt into age-based expiration with `mail.smtppool.pool.expiration-since-creation-millis` in the Jakarta provider and Camel adapter. The default `0` preserves the existing policy. Expiration is checked asynchronously while transports are available; it does not impose a hard connection-lifetime limit.
-- Update to `clustered-object-pool 4.1.1`, bringing in the timeout-policy equality fix from `generic-object-pool 2.5.1`. Creation-age and last-claim rules retain separate expiry state even with identical thresholds, using the standard combined policy ([upstream fix](https://github.com/bbottema/generic-object-pool/issues/24)). Existing APIs, Java baselines and module names remain supported.
+- [#35](https://github.com/simple-java-mail/smtp-connection-pool/issues/35): select an SMTP destination, finish application work that depends on its Session, then borrow a connection from that same registration. No connection is held during the intervening work.
+- Uses `clustered-object-pool 4.2.0` for registered-pool selection ([upstream #29](https://github.com/bbottema/clustered-object-pool/issues/29)). Existing combined claim methods, cancellation controls, lease handling, Java baselines and module names remain supported. No changes are needed for the Jakarta Mail provider, Spring or Camel integrations.
 
 Older releases are recorded in [RELEASE.txt](RELEASE.txt).
+
+## Selecting a destination before borrowing
+
+Usually, `claimTransportFromCluster(...)` selects an SMTP destination and borrows a connection in one call. Separate those steps
+when your application needs to inspect the selected Session before doing other work, without holding a connection during that work.
+
+For example, an application that limits how many emails it sends through each SMTP server can identify the selected server, wait
+until its own rate limiter permits another send, and only then borrow a connection. The pool itself does not implement rate limiting.
+
+Here, `waitForApplicationRateLimit(...)` represents your application's limiter, not a pool-library method:
+
+```java
+SmtpTransportSelection selected = pool.selectTransportFromCluster("company", claimOptions);
+waitForApplicationRateLimit(selected.getSession()); // No connection is borrowed during this wait.
+try (SmtpTransportLease lease = selected.claimTransport(claimOptions)) {
+    // Use lease.getTransport(); invalidate it if the connection fails.
+}
+```
+
+Pools must already be registered. Selection delegates to the configured cluster load balancer and does not open a connection. The later
+claim uses that same registration without selecting again. Retiring it makes a retained selection fail, even if another pool is registered
+for the same Session. `selectTransport(resourceKey, claimOptions)` provides the addressed variant.
+
+Selection and acquisition have separate timeout budgets, both capped by the configured cluster timeout. Pass the remaining application
+deadline when claiming if intervening application work must count toward a total deadline. A selection is not a lease and needs no cleanup;
+it holds neither capacity nor a live-connection guarantee. Existing combined claim methods retain their behavior.
+If you are ready to borrow immediately, keep using the combined claim method.
+See [#35](https://github.com/simple-java-mail/smtp-connection-pool/issues/35).

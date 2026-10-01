@@ -3,6 +3,13 @@ https://github.com/simple-java-mail/smtp-connection-pool
 
 RELEASE NOTES SMTP Connection Pool
 
+v4.3.0 (01-Oct-2026)
+
+- #35: Select an SMTP destination, do application work that needs its Session, then borrow a connection from that same pool.
+  No connection is held during the intervening work. Existing combined claim APIs remain available.
+  The later claim preserves the selected registration and existing cancellation, timeout and lease lifecycle behavior.
+  Uses clustered-object-pool 4.2.0 (bbottema/clustered-object-pool#29); generic-object-pool remains at 2.5.1.
+- Existing APIs, Java baselines, JPMS names and Jakarta Mail provider, Spring and Camel integrations remain compatible.
 
 v4.2.0 (17-Sep-2026)
 

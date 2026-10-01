@@ -14,7 +14,7 @@ Start with the real-server [Camel demo](../smtp-connection-pool-demo/src/main/ja
 <dependency>
     <groupId>org.simplejavamail</groupId>
     <artifactId>smtp-connection-pool-camel</artifactId>
-    <version>4.2.0</version>
+    <version>4.3.0</version>
 </dependency>
 ```
 

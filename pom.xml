@@ -37,15 +37,15 @@
 		<license.owner.email>benny@bennybottema.com</license.owner.email>
 		<jakarta-mail.version>2.1.3</jakarta-mail.version>
 		<jakarta-activation.version>2.1.4</jakarta-activation.version>
-		<clustered-object-pool.version>4.1.1</clustered-object-pool.version>
+		<clustered-object-pool.version>4.2.0</clustered-object-pool.version>
 		<angus-mail.version>2.0.5</angus-mail.version>
 		<spring.version>6.2.19</spring.version>
 		<camel.version>4.22.0</camel.version>
 		<simple-java-mail.version>9.3.0</simple-java-mail.version>
 		<subethasmtp.version>7.2.2</subethasmtp.version>
 		<jspecify.version>1.0.0</jspecify.version>
-		<core.compatibility.version>4.1.0</core.compatibility.version>
-		<core.compatibility.sha256>b44e736a7deaae585dc2b317fb2ed2dc16c902f7df27730feb31774cf6104e55</core.compatibility.sha256>
+		<core.compatibility.version>4.2.0</core.compatibility.version>
+		<core.compatibility.sha256>628814dc6ae0873cc0ae7f5d6a13ad8986d9cb391d13d74cae0f9575152c3515</core.compatibility.sha256>
 	</properties>
 
 	<scm>

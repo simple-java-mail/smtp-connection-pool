@@ -3,7 +3,10 @@ package org.simplejavamail.smtpconnectionpool.jpmsconsumer;
 import jakarta.mail.Session;
 import org.bbottema.genericobjectpool.ClaimControl;
 import org.bbottema.genericobjectpool.ClaimOptions;
+import org.bbottema.clusteredobjectpool.core.api.ResourceKey.ResourceClusterAndPoolKey;
+import org.simplejavamail.smtpconnectionpool.SmtpConnectionPoolClustered;
 import org.simplejavamail.smtpconnectionpool.SmtpTransportLease;
+import org.simplejavamail.smtpconnectionpool.SmtpTransportSelection;
 import org.simplejavamail.smtpconnectionpool.TransportCancellation;
 import org.simplejavamail.smtpconnectionpool.TransportCancellationSupport;
 
@@ -30,6 +33,15 @@ public final class JpmsPoolConsumer {
 
 	public static String providerProtocol() {
 		return SmtpPoolProperties.PROTOCOL;
+	}
+
+	/** Compiles the separate selection/acquisition route against only exported public types. The caller owns the pool. */
+	public static Session selectAndClaim(final SmtpConnectionPoolClustered<String> pool, final ClaimOptions options) throws InterruptedException {
+		final SmtpTransportSelection selected = pool.selectTransportFromCluster("cluster", options);
+		pool.selectTransport(new ResourceClusterAndPoolKey<>("cluster", selected.getSession()), options);
+		try (SmtpTransportLease lease = selected.claimTransport(options)) {
+			return lease.getSession();
+		}
 	}
 
 	/** Proves the opt-in API is consumable without implementation-package access on the module path. */

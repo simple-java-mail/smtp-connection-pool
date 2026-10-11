@@ -327,6 +327,8 @@ Verification runs all module tests, the real-server demo smoke tests, SpotBugs, 
 
 ## Current release
 
+The next version, **4.4.0**, is being verified locally and is not published yet. It lets applications list the SMTP destinations they can consider, distinguish failures while opening a connection, and observe connection attempts or pause automatic connection top-up. These are direct-pool APIs; they do not retry emails or add a health-check service. The examples below explain how to use them independently of Simple Java Mail. See [#37](https://github.com/simple-java-mail/smtp-connection-pool/issues/37) for release tracking.
+
 `4.3.0` (1 October 2026)
 
 - [#35](https://github.com/simple-java-mail/smtp-connection-pool/issues/35): select an SMTP destination, finish application work that depends on its Session, then borrow a connection from that same registration. No connection is held during the intervening work.
@@ -361,3 +363,109 @@ deadline when claiming if intervening application work must count toward a total
 it holds neither capacity nor a live-connection guarantee. Existing combined claim methods retain their behavior.
 If you are ready to borrow immediately, keep using the combined claim method.
 See [#35](https://github.com/simple-java-mail/smtp-connection-pool/issues/35).
+
+## Considering another SMTP destination
+
+`selectTransportCandidates(...)` gives your application an ordered list of registered SMTP destinations without opening
+or borrowing connections. Use it when you want to consider another server after a connection failure. It does not implement
+a failover policy: your application decides which failures justify another destination and when to stop.
+
+After registering the Sessions as shown under **Clustered pools**, select the list and claim from a chosen destination:
+
+```java
+List<SmtpTransportSelection> candidates = pool.selectTransportCandidates(clusterId, claimOptions);
+SmtpTransportSelection selected = candidates.get(0);
+Session selectedSession = selected.getSession(); // Inspect destination-specific configuration before borrowing.
+
+try (SmtpTransportLease lease = selected.claimTransport(claimOptions)) {
+    // Use lease.getTransport(); keep the usual send-failure invalidation handling.
+}
+```
+
+If opening the connection throws `SmtpConnectionException`, inspect its original provider exception through `getCause()`.
+An unreachable server, rejected credentials and an expired certificate are all connection-setup failures, but they need
+not have the same remedy. Only consider the next selection when your application permits it. This exception does not
+represent pool-capacity waiting, credential lookup, provider selection or a failed email submission; existing callers can
+still catch `TransportHandlingException`.
+
+Do not treat every acquisition failure as an outage. A healthy pool can simply be busy. Selection timeout throws
+`IllegalStateException`; cancellation and interruption retain their existing contracts. Once `sendMessage(...)` begins,
+deciding whether it is safe to retry the email is a separate application responsibility: losing a reply does not prove that
+the server rejected the message.
+
+The immutable list contains each captured registration once, starting with normal cluster load balancing. Alternatives
+use the same strategy without advancing other callers' shared selection position for each possible fallback. Later
+registrations do not appear in this list. A retired selection fails rather than redirecting to a replacement registration.
+Selections reserve no capacity and need no closing. Each claim has its own budget, capped by the cluster timeout; pass
+the remaining application budget if the complete operation must fit one deadline.
+
+## Observing connections and pausing automatic top-up
+
+Install a `TransportConnectionObserver` before constructing a direct pool when you want connection metrics or control
+over creating spare connections. It watches the provider's connection setup, not email submissions or delivery.
+
+This example counts connection results. The separate flag lets application code pause automatic top-up; the callbacks
+do not invent a recovery policy or automatically change the flag:
+
+```java
+AtomicBoolean automaticTopUp = new AtomicBoolean(true);
+AtomicInteger opened = new AtomicInteger();
+AtomicInteger failed = new AtomicInteger();
+AtomicInteger abandoned = new AtomicInteger();
+
+TransportConnectionObserver observer = new TransportConnectionObserver() {
+    @Override
+    public boolean isBackgroundConnectionAllowed(Session session) {
+        return automaticTopUp.get();
+    }
+
+    @Override
+    public Attempt connectionStarting(Session session, Transport transport) {
+        return new Attempt() {
+            @Override
+            public void connected() {
+                opened.incrementAndGet();
+            }
+
+            @Override
+            public void failed(Throwable failure) {
+                failed.incrementAndGet();
+            }
+
+            @Override
+            public void abandoned() {
+                abandoned.incrementAndGet();
+            }
+        };
+    }
+};
+
+SmtpClusterConfig<UUID> config = new SmtpClusterConfig<UUID>()
+    .withTransportConnectionObserver(observer);
+// Configure pool sizes and register Sessions as in the clustered-pool example above.
+SmtpConnectionPoolClustered<UUID> pool = new SmtpConnectionPoolClustered<>(config);
+
+automaticTopUp.set(false); // Application decides not to open spare connections right now.
+// Borrowing healthy connections and explicit claims can still proceed.
+automaticTopUp.set(true);  // Maintenance can resume automatic top-up on a later pass.
+```
+
+The flag in this example covers every Session in this pool. To control destinations separately, keep thread-safe state
+for each Session and consult it in `isBackgroundConnectionAllowed(...)`. Only a nonzero configured core pool size causes
+automatic top-up. Returning `false` postpones it without an allocation failure or retained capacity reservation; existing
+connections, expiration and disposal are unchanged. An allocation already underway may still finish.
+
+`connectionStarting(...)` runs after credentials are obtained, just before the provider's connect call. Its returned
+`Attempt` receives one result: `connected`, `failed`, or `abandoned` when cancellation, interruption or a timeout ends the
+claim during setup. Abandonment alone is not evidence of an SMTP outage. Reusing an already-connected transport does not
+report another connection attempt; reconnecting it does.
+
+Callbacks may run on claiming threads or the maintenance worker. Keep them quick and thread-safe, and do not retain,
+connect, send through or close the supplied transport. Avoid logging raw Sessions, connection URLs or credential-bearing
+exceptions. Runtime exceptions from observation callbacks are logged and ignored; one from the background-permission
+check postpones top-up instead. No pool bookkeeping lock is held during these calls.
+
+`withTransportConnectionObserver(...)` and `withTransportCancellationSupport(...)` retain each other's settings regardless
+of call order. Both replace a custom allocator factory, so choose the standard hooks or supply your own factory rather
+than assuming the two are combined. Defaults remain unchanged when no observer is installed. These APIs are part of the
+unreleased 4.4.0 work described above; the Jakarta Mail provider and Camel paths do not gain new configuration options.

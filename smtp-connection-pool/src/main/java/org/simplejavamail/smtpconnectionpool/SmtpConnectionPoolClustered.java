@@ -6,6 +6,10 @@ import org.bbottema.clusteredobjectpool.core.ResourcePoolSelection;
 import org.bbottema.clusteredobjectpool.core.api.ResourceKey;
 import org.bbottema.genericobjectpool.ClaimOptions;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+
 import static org.simplejavamail.smtpconnectionpool.SmtpTransportLease.leaseOrThrow;
 
 public class SmtpConnectionPoolClustered<ClusterKey> extends ResourceClusters<ClusterKey, Session, SessionTransport> {
@@ -66,6 +70,50 @@ public class SmtpConnectionPoolClustered<ClusterKey> extends ResourceClusters<Cl
      */
     public SmtpTransportSelection selectTransportFromCluster(final ClusterKey clusterKey) throws InterruptedException {
         return selectionOrThrow(selectPoolFromCluster(clusterKey));
+    }
+
+    /**
+     * Lists the SMTP destinations your application can consider, without opening or borrowing a connection.
+     * For example, you can inspect each selected Session and decide whether to try another server after a connection
+     * failure. This method does not try the servers or resend emails for you.
+     * <p>
+     * The immutable list contains each current registration once. The first destination follows normal cluster
+     * selection; alternatives use the same load-balancing strategy without advancing other callers' shared position.
+     * Later registrations do not enter this list, and retiring a registration makes its later claims fail rather
+     * than silently use a replacement.
+     * <p>
+     * When ready, use {@link SmtpTransportSelection#claimTransport(ClaimOptions)} on a selected destination.
+     * Each claim has its own timeout budget, capped by the cluster timeout; supply the remaining application budget
+     * if selection and acquisition must share a deadline. A selection reserves no capacity and needs no closing.
+     * Waiting for a busy pool does not itself establish that its SMTP server is unavailable.
+     *
+     * @param clusterKey the cluster whose registered SMTP destinations should be considered
+     * @param options cancellation and timeout controls for selection, not for subsequent connection claims
+     * @return the current destinations in selection order
+     * @throws IllegalStateException if the selection times out or the cluster has no registered pool
+     * @throws InterruptedException if selection is interrupted
+     * @see ResourceClusters#selectPoolCandidates(Object, ClaimOptions)
+     * @since 4.4.0
+     */
+    public List<SmtpTransportSelection> selectTransportCandidates(final ClusterKey clusterKey, final ClaimOptions options)
+            throws InterruptedException {
+        final List<ResourcePoolSelection<Session, SessionTransport>> candidates = selectPoolCandidates(clusterKey, options);
+        if (candidates == null) {
+            throw new IllegalStateException("Timed out selecting SMTP destinations; no connection was borrowed");
+        }
+        final List<SmtpTransportSelection> selections = new ArrayList<>();
+        for (final ResourcePoolSelection<Session, SessionTransport> candidate : candidates) {
+            selections.add(new SmtpTransportSelection(candidate));
+        }
+        return Collections.unmodifiableList(selections);
+    }
+
+    /**
+     * Lists the SMTP destinations your application can consider, using the cluster's normal timeout.
+     * See {@link #selectTransportCandidates(Object, ClaimOptions)} for selection and borrowing semantics.
+     */
+    public List<SmtpTransportSelection> selectTransportCandidates(final ClusterKey clusterKey) throws InterruptedException {
+        return selectTransportCandidates(clusterKey, ClaimOptions.withoutTimeout());
     }
 
     /**

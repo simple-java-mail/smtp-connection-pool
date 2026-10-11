@@ -26,14 +26,25 @@ class TransportAllocator extends Allocator<SessionTransport> {
 
 	@NotNull private final Session session;
 	private final TransportCancellationSupport cancellationSupport;
+	private final TransportConnectionObserver connectionObserver;
 
 	TransportAllocator(@NotNull final Session session) {
 		this(session, transport -> Optional.empty());
 	}
 
 	TransportAllocator(final Session session, final TransportCancellationSupport cancellationSupport) {
+		this(session, cancellationSupport, TransportConnectionObserver.NONE);
+	}
+
+	TransportAllocator(final Session session, final TransportCancellationSupport cancellationSupport, final TransportConnectionObserver connectionObserver) {
 		this.session = session;
 		this.cancellationSupport = cancellationSupport;
+		this.connectionObserver = connectionObserver;
+	}
+
+	@Override
+	public boolean isBackgroundAllocationAllowed() {
+		return connectionObserver.isBackgroundConnectionAllowed(session);
 	}
 
 	@NotNull
@@ -111,6 +122,7 @@ class TransportAllocator extends Allocator<SessionTransport> {
 			return;
 		}
 		LOGGER.trace("opening transport connection...");
+		final TransportConnectionObserver.Attempt observation = startObservation(transport);
 		try {
 			if (oauth2Token != null) {
 				// OAuth2 uses the explicit credential route; Session's Authenticator remains unchanged.
@@ -119,7 +131,42 @@ class TransportAllocator extends Allocator<SessionTransport> {
 				transport.connect();
 			}
 		} catch (MessagingException failure) {
-			throw new TransportHandlingException("Error while opening the configured SMTP transport", failure);
+			notifyObservation(() -> reportConnectionFailure(observation, failure, context));
+			throw new SmtpConnectionException(failure);
+		} catch (RuntimeException | Error failure) {
+			notifyObservation(() -> reportConnectionFailure(observation, failure, context));
+			throw failure;
+		}
+		notifyObservation(isAbandoned(context) ? observation::abandoned : observation::connected);
+	}
+
+	private static void reportConnectionFailure(final TransportConnectionObserver.Attempt observation, final Throwable failure,
+			final AllocationContext context) {
+		if (isAbandoned(context)) {
+			observation.abandoned();
+		} else {
+			observation.failed(failure);
+		}
+	}
+
+	private static boolean isAbandoned(final AllocationContext context) {
+		return Thread.currentThread().isInterrupted() || context != null && (context.isCancellationRequested() || context.isTimedOut());
+	}
+
+	private TransportConnectionObserver.Attempt startObservation(final Transport transport) {
+		try {
+			return requireNonNull(connectionObserver.connectionStarting(session, transport), "connection observation");
+		} catch (RuntimeException failure) {
+			LOGGER.warn("Connection observation could not start; leaving the connection result unchanged", failure);
+			return TransportConnectionObserver.Attempt.NONE;
+		}
+	}
+
+	private static void notifyObservation(final Runnable notification) {
+		try {
+			notification.run();
+		} catch (RuntimeException failure) {
+			LOGGER.warn("Connection observation failed; leaving the connection result unchanged", failure);
 		}
 	}
 

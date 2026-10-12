@@ -96,7 +96,7 @@ The provider module lets Jakarta Mail, Spring, and Camel obtain pooled `Transpor
 <dependency>
     <groupId>org.simplejavamail</groupId>
     <artifactId>smtp-connection-pool</artifactId>
-    <version>4.3.0</version>
+    <version>4.4.0</version>
 </dependency>
 ```
 
@@ -262,7 +262,7 @@ Add the provider plus a physical Jakarta Mail implementation:
 <dependency>
     <groupId>org.simplejavamail</groupId>
     <artifactId>smtp-connection-pool-jakarta-provider</artifactId>
-    <version>4.3.0</version>
+    <version>4.4.0</version>
 </dependency>
 <dependency>
     <groupId>org.eclipse.angus</groupId>
@@ -300,7 +300,7 @@ Spring uses the same provider by configuring `JavaMailSenderImpl` with protocol 
 <dependency>
     <groupId>org.simplejavamail</groupId>
     <artifactId>smtp-connection-pool-camel</artifactId>
-    <version>4.3.0</version>
+    <version>4.4.0</version>
 </dependency>
 ```
 
@@ -319,7 +319,7 @@ Build the complete project with JDK 21 and Maven. The original pool and Jakarta 
 mvn clean verify
 ```
 
-Verification runs all module tests, the real-server demo smoke tests, SpotBugs, Javadocs, and a checksum-pinned japicmp comparison with the preceding published `4.0.2` library. CircleCI also compiles and tests the original pool plus Jakarta provider on an actual JDK 8. Its JDK 21 release job versions and publishes all public modules together while leaving out the demo.
+Verification runs all module tests, the real-server demo smoke tests, SpotBugs, Javadocs, and a checksum-pinned japicmp comparison with the preceding published `4.3.0` library. CircleCI also compiles and tests the original pool plus Jakarta provider on an actual JDK 8. Its JDK 21 release job versions and publishes all public modules together while leaving out the demo.
 
 ## Related custom transports
 
@@ -327,7 +327,11 @@ Verification runs all module tests, the real-server demo smoke tests, SpotBugs, 
 
 ## Current release
 
-The next version, **4.4.0**, is being verified locally and is not published yet. It lets applications list the SMTP destinations they can consider, distinguish failures while opening a connection, and observe connection attempts or pause automatic connection top-up. These are direct-pool APIs; they do not retry emails or add a health-check service. The examples below explain how to use them independently of Simple Java Mail. See [#37](https://github.com/simple-java-mail/smtp-connection-pool/issues/37) for release tracking.
+`4.4.0` (12 October 2026)
+
+- [#37](https://github.com/simple-java-mail/smtp-connection-pool/issues/37): list the SMTP destinations your application can consider, distinguish failures while opening a connection, and observe connection attempts or pause automatic connection top-up. These direct-pool APIs do not retry emails or add a health-check service. The examples below explain how to use them independently of Simple Java Mail.
+- Carry an already-started acquisition through `claimTransportWithContext(...)`. Its identity reaches the connection observer, so overlapping callers and background creation can be distinguished without thread-local state.
+- Uses Clustered Object Pool 4.3.0 and Generic Object Pool 2.6.0. Existing acquisition APIs, Java baselines, module names and provider/Camel configuration remain supported.
 
 `4.3.0` (1 October 2026)
 
@@ -460,6 +464,17 @@ connections, expiration and disposal are unchanged. An allocation already underw
 claim during setup. Abandonment alone is not evidence of an SMTP outage. Reusing an already-connected transport does not
 report another connection attempt; reconnecting it does.
 
+When you need to associate connection setup with a particular caller, override
+`connectionStarting(Session, Transport, AllocationContext)`. Its context carries the opaque `getClaimIdentity()` from
+`ClaimOptions.start()`, preserved through narrowed pool budgets. Start and register that identity before calling
+`selected.claimTransportWithContext(context)`, and remove the registration in `finally` after the claim settles.
+Background allocation and legacy uncontrolled claims supply `null`; they must not be attributed to another active caller.
+The default overload delegates to the original two-argument callback, so existing observers keep working.
+
+The `connected` callback reports physical setup, not successful lease handoff. Cancellation or retirement can still
+discard that connection before the claim returns. An integration deciding whether its caller recovered should wait
+until it has accepted the returned lease; an already-connected reused lease can establish recovery too.
+
 Callbacks may run on claiming threads or the maintenance worker. Keep them quick and thread-safe, and do not retain,
 connect, send through or close the supplied transport. Avoid logging raw Sessions, connection URLs or credential-bearing
 exceptions. Runtime exceptions from observation callbacks are logged and ignored; one from the background-permission
@@ -467,5 +482,5 @@ check postpones top-up instead. No pool bookkeeping lock is held during these ca
 
 `withTransportConnectionObserver(...)` and `withTransportCancellationSupport(...)` retain each other's settings regardless
 of call order. Both replace a custom allocator factory, so choose the standard hooks or supply your own factory rather
-than assuming the two are combined. Defaults remain unchanged when no observer is installed. These APIs are part of the
-unreleased 4.4.0 work described above; the Jakarta Mail provider and Camel paths do not gain new configuration options.
+than assuming the two are combined. Defaults remain unchanged when no observer is installed. These APIs are available
+from 4.4.0; the Jakarta Mail provider and Camel paths do not gain new configuration options.

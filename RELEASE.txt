@@ -3,15 +3,15 @@ https://github.com/simple-java-mail/smtp-connection-pool
 
 RELEASE NOTES SMTP Connection Pool
 
-v4.4.0 (unreleased)
+v4.4.0 (12 October 2026)
 
 - #37: List SMTP destinations to consider with selectTransportCandidates(...), without opening or borrowing connections.
   Each captured registration appears once; the application decides whether a connection failure justifies trying another.
 - #37: Track connection attempts and pause automatic connection top-up with TransportConnectionObserver.
   SmtpConnectionException retains the provider's connection failure as its cause, separate from pool-capacity waiting, credential lookup and sending failures.
   These APIs do not choose recovery rules, retry emails or add a health-check service.
-- Uses clustered-object-pool 4.3.0-SNAPSHOT and generic-object-pool 2.6.0-SNAPSHOT for local verification.
-  Existing APIs and Java baselines remain supported. This version is not published yet.
+- #37: Carry claim identity, cancellation and elapsed budget through claimTransportWithContext(...) into connection observation, keeping overlapping callers and background allocation distinct.
+- Uses clustered-object-pool 4.3.0 and generic-object-pool 2.6.0. Existing APIs, Java baselines and automatic module names remain supported.
 
 v4.3.0 (01-Oct-2026)
 

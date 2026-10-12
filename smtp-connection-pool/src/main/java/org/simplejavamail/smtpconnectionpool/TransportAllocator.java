@@ -122,7 +122,7 @@ class TransportAllocator extends Allocator<SessionTransport> {
 			return;
 		}
 		LOGGER.trace("opening transport connection...");
-		final TransportConnectionObserver.Attempt observation = startObservation(transport);
+		final TransportConnectionObserver.Attempt observation = startObservation(transport, context);
 		try {
 			if (oauth2Token != null) {
 				// OAuth2 uses the explicit credential route; Session's Authenticator remains unchanged.
@@ -153,9 +153,9 @@ class TransportAllocator extends Allocator<SessionTransport> {
 		return Thread.currentThread().isInterrupted() || context != null && (context.isCancellationRequested() || context.isTimedOut());
 	}
 
-	private TransportConnectionObserver.Attempt startObservation(final Transport transport) {
+	private TransportConnectionObserver.Attempt startObservation(final Transport transport, final AllocationContext context) {
 		try {
-			return requireNonNull(connectionObserver.connectionStarting(session, transport), "connection observation");
+			return requireNonNull(connectionObserver.connectionStarting(session, transport, context), "connection observation");
 		} catch (RuntimeException failure) {
 			LOGGER.warn("Connection observation could not start; leaving the connection result unchanged", failure);
 			return TransportConnectionObserver.Attempt.NONE;

@@ -4,12 +4,15 @@ import jakarta.mail.Session;
 import org.bbottema.clusteredobjectpool.core.api.ResourceKey.ResourceClusterAndPoolKey;
 import org.bbottema.genericobjectpool.ClaimControl;
 import org.bbottema.genericobjectpool.ClaimOptions;
+import org.bbottema.genericobjectpool.AllocationContext;
+import jakarta.mail.Transport;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
 import java.util.Properties;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -21,6 +24,33 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 class SmtpTransportSelectionTest {
+
+    @Test
+    void startedContextReachesPhysicalSetupWithTheSameIdentity() throws Exception {
+        final AtomicReference<AllocationContext> observed = new AtomicReference<>();
+        final SmtpClusterConfig<String> configuration = SmtpClaimCancellationTest.configuration(true);
+        configuration.withTransportConnectionObserver(new TransportConnectionObserver() {
+            @Override public Attempt connectionStarting(final Session session, final Transport transport, final AllocationContext context) {
+                observed.set(context);
+                return Attempt.NONE;
+            }
+        });
+        final SmtpConnectionPoolClustered<String> observedPool = new SmtpConnectionPoolClustered<>(configuration);
+        final Session session = mock(Session.class);
+        when(session.getProperties()).thenReturn(new Properties());
+        final Transport transport = new AbortableTestTransport(session);
+        when(session.getTransport()).thenReturn(transport);
+        final AllocationContext context = ClaimOptions.withoutTimeout().start();
+        try {
+            observedPool.registerResourcePool(new ResourceClusterAndPoolKey<>("observed", session));
+            try (SmtpTransportLease lease = observedPool.selectTransportFromCluster("observed").claimTransportWithContext(context)) {
+                assertSame(session, lease.getSession());
+                assertSame(context.getClaimIdentity(), observed.get().getClaimIdentity());
+            }
+        } finally {
+            observedPool.shutDown().get(5, SECONDS);
+        }
+    }
 
     private final SmtpConnectionPoolClustered<String> pool = new SmtpConnectionPoolClustered<>(SmtpClaimCancellationTest.configuration(true));
     private final AtomicInteger creations = new AtomicInteger();
@@ -57,6 +87,8 @@ class SmtpTransportSelectionTest {
         control.requestCancellation();
         final ClaimOptions cancelled = ClaimOptions.withoutTimeout().withClaimControl(control);
         assertThrows(CancellationException.class, () -> selected.claimTransport(cancelled));
+        assertThrows(CancellationException.class, () -> selected.claimTransportWithContext(cancelled.start()));
+        assertThrows(IllegalStateException.class, () -> selected.claimTransportWithContext(ClaimOptions.withTimeout(0, SECONDS).start()));
         assertThrows(CancellationException.class, () -> pool.selectTransportFromCluster("cluster", cancelled));
         assertEquals(0, creations.get());
         final SmtpTransportLease held = selected.claimTransport();
@@ -80,6 +112,7 @@ class SmtpTransportSelectionTest {
         pool.shutdownPool(session).get(5, SECONDS);
         pool.registerResourcePool(key);
         assertThrows(IllegalStateException.class, old::claimTransport);
+        assertThrows(IllegalStateException.class, () -> old.claimTransportWithContext(ClaimOptions.withoutTimeout().start()));
         assertEquals(0, creations.get());
         try (SmtpTransportLease current = pool.selectTransport(key).claimTransport()) {
             assertSame(session, current.getSession());

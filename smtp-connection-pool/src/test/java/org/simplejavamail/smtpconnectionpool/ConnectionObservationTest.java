@@ -5,6 +5,8 @@ import jakarta.mail.Session;
 import jakarta.mail.Transport;
 import org.bbottema.genericobjectpool.ClaimControl;
 import org.bbottema.genericobjectpool.ClaimOptions;
+import org.bbottema.genericobjectpool.AllocationContext;
+import org.bbottema.genericobjectpool.util.Timeout;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
@@ -12,11 +14,37 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.Properties;
+import static java.util.concurrent.TimeUnit.SECONDS;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 class ConnectionObservationTest {
+    @Test
+    void contextAwareObserverDistinguishesClaimsAndBackgroundConnections() throws Exception {
+        final Session session = mock(Session.class);
+        final Transport transport = mock(Transport.class);
+        when(session.getProperties()).thenReturn(new Properties());
+        when(session.getTransport()).thenReturn(transport);
+        final List<AllocationContext> contexts = new ArrayList<>();
+        final TransportConnectionObserver observer = new TransportConnectionObserver() {
+            @Override public Attempt connectionStarting(final Session selected, final Transport connection, final AllocationContext context) {
+                contexts.add(context);
+                return Attempt.NONE;
+            }
+        };
+        final TransportAllocator allocator = new TransportAllocator(session, ignored -> Optional.empty(), observer);
+        final AllocationContext first = ClaimOptions.withoutTimeout().start();
+        final AllocationContext second = ClaimOptions.withoutTimeout().start();
+        allocator.allocate(first.limitedTo(new Timeout(30, SECONDS)));
+        allocator.allocate(second);
+        allocator.allocate();
+        assertSame(first.getClaimIdentity(), contexts.get(0).getClaimIdentity());
+        assertSame(second.getClaimIdentity(), contexts.get(1).getClaimIdentity());
+        assertNotSame(contexts.get(0).getClaimIdentity(), contexts.get(1).getClaimIdentity());
+        assertNull(contexts.get(2));
+    }
+
     @Test
     void successAndFailureAreReportedExactlyOnceAndFailureKeepsItsIdentity() throws Exception {
         final Session session = mock(Session.class);

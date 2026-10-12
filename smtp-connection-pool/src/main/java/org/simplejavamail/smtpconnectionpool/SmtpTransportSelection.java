@@ -3,6 +3,7 @@ package org.simplejavamail.smtpconnectionpool;
 import jakarta.mail.Session;
 import org.bbottema.clusteredobjectpool.core.ResourcePoolSelection;
 import org.bbottema.genericobjectpool.ClaimOptions;
+import org.bbottema.genericobjectpool.AllocationContext;
 import org.jetbrains.annotations.NotNull;
 
 import static org.simplejavamail.smtpconnectionpool.SmtpTransportLease.leaseOrThrow;
@@ -45,6 +46,18 @@ public final class SmtpTransportSelection {
     @NotNull
     public SmtpTransportLease claimTransport(@NotNull final ClaimOptions options) throws InterruptedException {
         return leaseOrThrow(selected.claim(options));
+    }
+
+    /**
+     * Continues an already-started claim against this original registration, preserving its identity, cancellation
+     * and elapsed budget. The configured pool timeout can shorten, but never restart, that budget. Use this when
+     * coordinating work across pool layers; ordinary callers can use {@link #claimTransport(ClaimOptions)}.
+     *
+     * @since 4.4.0
+     */
+    @NotNull
+    public SmtpTransportLease claimTransportWithContext(@NotNull final AllocationContext context) throws InterruptedException {
+        return leaseOrThrow(selected.claimWithContext(context));
     }
 
 }

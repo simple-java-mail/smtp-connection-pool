@@ -2,6 +2,8 @@ package org.simplejavamail.smtpconnectionpool;
 
 import jakarta.mail.Session;
 import jakarta.mail.Transport;
+import org.bbottema.genericobjectpool.AllocationContext;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * Lets you track connection attempts and temporarily pause the pool's automatic connection top-up.
@@ -49,6 +51,23 @@ public interface TransportConnectionObserver {
      */
     default Attempt connectionStarting(final Session session, final Transport transport) {
         return Attempt.NONE;
+    }
+
+    /**
+     * Associates physical connection setup with the claim that requested it. The context's opaque identity survives
+     * narrowed budgets, so integrations can distinguish overlapping callers without thread-local state. Background
+     * allocation and legacy uncontrolled claims have no context. The default invokes the original two-argument
+     * callback, preserving existing observers. Do not retain the Session, transport or context after settlement.
+     *
+     * @param session the SMTP configuration used by this attempt
+     * @param transport the provider transport about to be connected; do not retain it
+     * @param context the active claim, or {@code null} when setup is not part of a context-aware claim
+     * @return a non-null observation for this attempt
+     * @see #connectionStarting(Session, Transport)
+     * @since 4.4.0
+     */
+    default Attempt connectionStarting(final Session session, final Transport transport, @Nullable final AllocationContext context) {
+        return connectionStarting(session, transport);
     }
 
     /** Receives the result of one connection attempt, not the result of an email submission. */

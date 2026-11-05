@@ -336,6 +336,7 @@ Verification runs all module tests, the real-server demo smoke tests, SpotBugs, 
 
 - [#38](https://github.com/simple-java-mail/smtp-connection-pool/issues/38): preserve the selected provider's username resolution for OAuth connections, including SMTPS Sessions that retain a different SMTP username. Fixed tokens and connection-time suppliers retain ordinary username fallback without rewriting the Session.
 - Existing public APIs, Java baselines, module names and provider/Camel configuration remain supported.
+- Central release packaging excludes Maven 3.10 local repository metadata while retaining the parent and all three library modules.
 
 `4.4.0` (12 October 2026)
 

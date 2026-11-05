@@ -75,7 +75,7 @@ public class TransportAllocatorTest {
 		new TransportAllocator(session).allocate();
 
 		assertEquals(1, calls.get());
-		verify(transport).connect("user@example.com", "token-1");
+		verify(transport).connect(null, "token-1");
 	}
 
 	@Test
@@ -95,8 +95,8 @@ public class TransportAllocatorTest {
 		allocator.allocateForReuse(new SessionTransport(session, connected));
 
 		assertEquals(1, calls.get());
-		verify(disconnected).connect("user@example.com", "token-1");
-		verify(connected, never()).connect("user@example.com", "token-1");
+		verify(disconnected).connect(null, "token-1");
+		verify(connected, never()).connect(null, "token-1");
 	}
 
 	@Test
@@ -110,7 +110,7 @@ public class TransportAllocatorTest {
 
 		new TransportAllocator(session).allocate();
 
-		verify(transport).connect("user@example.com", "fixed-token");
+		verify(transport).connect(null, "fixed-token");
 	}
 
 	@Test

@@ -125,8 +125,8 @@ class TransportAllocator extends Allocator<SessionTransport> {
 		final TransportConnectionObserver.Attempt observation = startObservation(transport, context);
 		try {
 			if (oauth2Token != null) {
-				// OAuth2 uses the explicit credential route; Session's Authenticator remains unchanged.
-				transport.connect(session.getProperties().getProperty("mail.smtp.user"), oauth2Token);
+				// The selected provider resolves its username normally; only the refreshed token is explicit.
+				transport.connect(null, oauth2Token);
 			} else {
 				transport.connect();
 			}

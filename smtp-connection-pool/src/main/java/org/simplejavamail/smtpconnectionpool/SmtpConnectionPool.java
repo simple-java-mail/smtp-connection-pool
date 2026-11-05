@@ -13,6 +13,8 @@ public class SmtpConnectionPool extends ResourceClusters<Session, Session, Sessi
     /**
      * When using OAuth2 authentication, there is no default Session property to configure the value, so we'll state
      * here that we will be looking for a property named {@value}.
+     * The selected Jakarta Mail provider resolves the username using its ordinary URL and Session settings;
+     * the allocator supplies only this token explicitly and leaves unrelated protocol usernames unchanged.
      */
     public static final String OAUTH2_TOKEN_PROPERTY = "smtp.connection.pool.transport.allocator.oauth2token";
 

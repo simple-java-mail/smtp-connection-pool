@@ -96,7 +96,7 @@ The provider module lets Jakarta Mail, Spring, and Camel obtain pooled `Transpor
 <dependency>
     <groupId>org.simplejavamail</groupId>
     <artifactId>smtp-connection-pool</artifactId>
-    <version>4.4.0</version>
+    <version>4.4.1</version>
 </dependency>
 ```
 
@@ -227,6 +227,11 @@ session.getProperties().put(
 
 The supplier owns caching and refresh. A fixed token remains available through `OAUTH2_TOKEN_PROPERTY` for short-lived use.
 
+OAuth authentication keeps the selected Jakarta Mail provider's normal username resolution. An SMTP or STARTTLS connection
+uses `mail.smtp.user`, while SMTPS uses `mail.smtps.user`; a value for an inactive protocol does not select another account.
+Provider URL and mail-wide username fallbacks retain their ordinary meaning. The allocator passes only the current token
+explicitly and does not rewrite the Session's username properties.
+
 ## Path 2: Simple Java Mail `batch-module`
 
 This path is deliberately delivered in Simple Java Mail, not in this repository. [Simple Java Mail #698](https://github.com/bbottema/simple-java-mail/issues/698) added a public callback API in Simple Java Mail 9.3.0 for applications that already create Jakarta Mail messages but want asynchronous execution, clustering, and safe release/invalidate handling without adopting the full `EmailBuilder`/`Mailer` API.
@@ -262,7 +267,7 @@ Add the provider plus a physical Jakarta Mail implementation:
 <dependency>
     <groupId>org.simplejavamail</groupId>
     <artifactId>smtp-connection-pool-jakarta-provider</artifactId>
-    <version>4.4.0</version>
+    <version>4.4.1</version>
 </dependency>
 <dependency>
     <groupId>org.eclipse.angus</groupId>
@@ -300,7 +305,7 @@ Spring uses the same provider by configuring `JavaMailSenderImpl` with protocol 
 <dependency>
     <groupId>org.simplejavamail</groupId>
     <artifactId>smtp-connection-pool-camel</artifactId>
-    <version>4.4.0</version>
+    <version>4.4.1</version>
 </dependency>
 ```
 
@@ -319,13 +324,18 @@ Build the complete project with JDK 21 and Maven. The original pool and Jakarta 
 mvn clean verify
 ```
 
-Verification runs all module tests, the real-server demo smoke tests, SpotBugs, Javadocs, and a checksum-pinned japicmp comparison with the preceding published `4.3.0` library. CircleCI also compiles and tests the original pool plus Jakarta provider on an actual JDK 8. Its JDK 21 release job versions and publishes all public modules together while leaving out the demo.
+Verification runs all module tests, the real-server demo smoke tests, SpotBugs, Javadocs, and a checksum-pinned japicmp comparison with the preceding published `4.4.0` library. CircleCI also compiles and tests the original pool plus Jakarta provider on an actual JDK 8. Its JDK 21 release job versions and publishes all public modules together while leaving out the demo.
 
 ## Related custom transports
 
 [Simple Java Mail #699](https://github.com/bbottema/simple-java-mail/issues/699) may produce a faster physical transport. If it implements Jakarta Mail's synchronous `Transport` contract with one reusable physical session per instance, it can be selected beneath these paths just like Angus. If it instead uses Simple Java Mail's `CustomMailer`, it owns its own lifecycle and must not be stacked on this pool.
 
 ## Current release
+
+`4.4.1` (5 November 2026)
+
+- [#38](https://github.com/simple-java-mail/smtp-connection-pool/issues/38): preserve the selected provider's username resolution for OAuth connections, including SMTPS Sessions that retain a different SMTP username. Fixed tokens and connection-time suppliers retain ordinary username fallback without rewriting the Session.
+- Existing public APIs, Java baselines, module names and provider/Camel configuration remain supported.
 
 `4.4.0` (12 October 2026)
 

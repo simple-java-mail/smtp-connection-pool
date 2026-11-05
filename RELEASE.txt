@@ -3,6 +3,12 @@ https://github.com/simple-java-mail/smtp-connection-pool
 
 RELEASE NOTES SMTP Connection Pool
 
+v4.4.1 (5 November 2026)
+
+- #38: Keep the selected provider's username resolution when opening or reconnecting OAuth connections.
+  SMTPS no longer authenticates with an inactive mail.smtp.user value, and ordinary URL, protocol-specific and mail-wide
+  username fallbacks remain available. Fixed tokens, connection-time suppliers, Session properties and existing APIs are preserved.
+
 v4.4.0 (12 October 2026)
 
 - #37: List SMTP destinations to consider with selectTransportCandidates(...), without opening or borrowing connections.

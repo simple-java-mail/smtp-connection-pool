@@ -11,12 +11,8 @@ import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 
 import java.util.Optional;
-import java.util.Properties;
-import java.util.function.Supplier;
 
 import static java.util.Objects.requireNonNull;
-import static org.simplejavamail.smtpconnectionpool.SmtpConnectionPool.OAUTH2_TOKEN_PROPERTY;
-import static org.simplejavamail.smtpconnectionpool.SmtpConnectionPool.OAUTH2_TOKEN_PROVIDER_PROPERTY;
 import static org.slf4j.LoggerFactory.getLogger;
 
 /** Owns a new transport until preparation succeeds; the generic pool owns reuse and eventual disposal afterwards. */
@@ -27,6 +23,7 @@ class TransportAllocator extends Allocator<SessionTransport> {
 	@NotNull private final Session session;
 	private final TransportCancellationSupport cancellationSupport;
 	private final TransportConnectionObserver connectionObserver;
+	private final OAuth2TokenSource tokenSource;
 
 	TransportAllocator(@NotNull final Session session) {
 		this(session, transport -> Optional.empty());
@@ -37,9 +34,15 @@ class TransportAllocator extends Allocator<SessionTransport> {
 	}
 
 	TransportAllocator(final Session session, final TransportCancellationSupport cancellationSupport, final TransportConnectionObserver connectionObserver) {
+		this(session, cancellationSupport, connectionObserver, OAuth2TokenSource.legacyProperties());
+	}
+
+	TransportAllocator(final Session session, final TransportCancellationSupport cancellationSupport,
+			final TransportConnectionObserver connectionObserver, final OAuth2TokenSource tokenSource) {
 		this.session = session;
 		this.cancellationSupport = cancellationSupport;
 		this.connectionObserver = connectionObserver;
+		this.tokenSource = tokenSource;
 	}
 
 	@Override
@@ -117,7 +120,7 @@ class TransportAllocator extends Allocator<SessionTransport> {
 		if (!canContinue(context)) {
 			return;
 		}
-		final String oauth2Token = resolveOAuth2Token();
+		final String oauth2Token = tokenSource.resolve(session);
 		if (!canContinue(context)) {
 			return;
 		}
@@ -180,28 +183,6 @@ class TransportAllocator extends Allocator<SessionTransport> {
 		if (context != null) {
 			context.throwIfCancellationRequested();
 		}
-	}
-
-	private String resolveOAuth2Token() {
-		final Properties properties = session.getProperties();
-		final Object provider = properties.get(OAUTH2_TOKEN_PROVIDER_PROPERTY);
-		if (provider == null) {
-			return (String) properties.getOrDefault(OAUTH2_TOKEN_PROPERTY, null);
-		}
-		if (!(provider instanceof Supplier)) {
-			throw new TransportHandlingException("The configured OAuth2 token provider is not a Supplier", null);
-		}
-
-		final Object providedToken;
-		try {
-			providedToken = ((Supplier<?>) provider).get();
-		} catch (RuntimeException failure) {
-			throw new TransportHandlingException("The OAuth2 token provider failed while obtaining an access token", failure);
-		}
-		if (!(providedToken instanceof String) || ((String) providedToken).trim().isEmpty()) {
-			throw new TransportHandlingException("The OAuth2 token provider returned a blank access token", null);
-		}
-		return (String) providedToken;
 	}
 
 	private static void closeAfterFailedPreparation(final Transport transport, final Throwable primaryFailure) {

@@ -28,6 +28,8 @@ class TransportAllocatorFactory<ClusterKey> implements AllocatorFactory<ClusterK
 	@Override
 	@NotNull
 	public Allocator<SessionTransport> create(@NotNull final ResourceKey<ClusterKey, Session> resourceKey) {
-		return new TransportAllocator(resourceKey.getPoolKey(), cancellationSupport, connectionObserver);
+		final OAuth2TokenSource tokenSource = resourceKey instanceof SmtpPoolRegistration
+				? ((SmtpPoolRegistration<?>) resourceKey).getTokenSource() : OAuth2TokenSource.legacyProperties();
+		return new TransportAllocator(resourceKey.getPoolKey(), cancellationSupport, connectionObserver, tokenSource);
 	}
 }

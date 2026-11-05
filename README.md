@@ -96,11 +96,13 @@ The provider module lets Jakarta Mail, Spring, and Camel obtain pooled `Transpor
 <dependency>
     <groupId>org.simplejavamail</groupId>
     <artifactId>smtp-connection-pool</artifactId>
-    <version>4.4.1</version>
+    <version>4.5.0</version>
 </dependency>
 ```
 
-Create a Session normally, then claim one exclusive lease. Closing an active lease releases it; invalidate it first when a failure makes the connection uncertain.
+Create a Session normally, then claim one exclusive lease. The public `SmtpConnectionPool` object manages separate connection pools keyed by
+Session; its constructor sets manager defaults without supplying a first Session. A claim or explicit registration identifies that Session's pool.
+Closing an active lease releases it; invalidate it first when a failure makes the connection uncertain.
 
 ```java
 SmtpConnectionPool pool = new SmtpConnectionPool(new SmtpClusterConfig<Session>());
@@ -217,15 +219,34 @@ Clusters and pools are created on demand. Use `registerResourceCluster` or `regi
 
 ### OAuth2 tokens
 
-The direct allocator resolves a thread-safe token supplier only when it opens or reconnects a physical transport:
+Bind a thread-safe token supplier to a Session's pool registration before the first claim. The allocator obtains a token
+only when it opens or reconnects a physical transport; connected reuse does not call it again:
 
 ```java
-session.getProperties().put(
-        SmtpConnectionPool.OAUTH2_TOKEN_PROVIDER_PROPERTY,
-        (Supplier<String>) tokenProvider::getAccessToken);
+SmtpConnectionPool pool = new SmtpConnectionPool(new SmtpClusterConfig<Session>());
+ResourcePoolKey<Session> key = new ResourcePoolKey<>(session);
+pool.registerResourcePool(key, tokenProvider::getAccessToken);
 ```
 
-The supplier owns caching and refresh. A fixed token remains available through `OAUTH2_TOKEN_PROPERTY` for short-lived use.
+The supplier owns caching and refresh and must return a nonblank token. A throwing supplier or a null/blank result fails
+preparation without falling back to another credential source. A fixed token can use a constant supplier. The explicit
+overload accepts null to select ordinary Session authentication, even if old pool OAuth properties remain on the Session:
+
+```java
+pool.registerResourcePool(key, null);
+```
+
+Choose one registration for a key; the second example is an alternative, not a replacement operation on an active pool.
+The same overloads are available on `SmtpConnectionPoolClustered`, using a `ResourceClusterAndPoolKey`, and alongside explicit
+expiration/core/max settings. Each exact registration owns its authentication choice without changing Session properties.
+Existing duplicate-registration behavior remains; changing credentials does not reauthenticate an already-connected transport.
+After actual resource retirement the manager drops its registration state. A caller-held retired selection or lease can still
+retain its old objects, but stale selections cannot make the pool invoke an old supplier or claim a replacement registration;
+this API does not promise heap erasure.
+
+Ordinary callers need no authentication argument. Existing registration overloads and implicit first claims retain legacy
+property-based OAuth behavior, including `OAUTH2_TOKEN_PROPERTY` and `OAUTH2_TOKEN_PROVIDER_PROPERTY`. Explicit token-supplier
+overloads ignore those properties. This permits integrations to keep caller entries untouched without reviving old credentials.
 
 OAuth authentication keeps the selected Jakarta Mail provider's normal username resolution. An SMTP or STARTTLS connection
 uses `mail.smtp.user`, while SMTPS uses `mail.smtps.user`; a value for an inactive protocol does not select another account.
@@ -267,7 +288,7 @@ Add the provider plus a physical Jakarta Mail implementation:
 <dependency>
     <groupId>org.simplejavamail</groupId>
     <artifactId>smtp-connection-pool-jakarta-provider</artifactId>
-    <version>4.4.1</version>
+    <version>4.5.0</version>
 </dependency>
 <dependency>
     <groupId>org.eclipse.angus</groupId>
@@ -305,7 +326,7 @@ Spring uses the same provider by configuring `JavaMailSenderImpl` with protocol 
 <dependency>
     <groupId>org.simplejavamail</groupId>
     <artifactId>smtp-connection-pool-camel</artifactId>
-    <version>4.4.1</version>
+    <version>4.5.0</version>
 </dependency>
 ```
 
@@ -324,13 +345,16 @@ Build the complete project with JDK 21 and Maven. The original pool and Jakarta 
 mvn clean verify
 ```
 
-Verification runs all module tests, the real-server demo smoke tests, SpotBugs, Javadocs, and a checksum-pinned japicmp comparison with the preceding published `4.4.0` library. CircleCI also compiles and tests the original pool plus Jakarta provider on an actual JDK 8. Its JDK 21 release job versions and publishes all public modules together while leaving out the demo.
+Verification runs all module tests, the real-server demo smoke tests, SpotBugs, Javadocs, and a checksum-pinned japicmp comparison with the preceding published `4.4.1` library. CircleCI also compiles and tests the original pool plus Jakarta provider on an actual JDK 8. Its JDK 21 release job versions and publishes all public modules together while leaving out the demo.
 
 ## Related custom transports
 
 [Simple Java Mail #699](https://github.com/bbottema/simple-java-mail/issues/699) may produce a faster physical transport. If it implements Jakarta Mail's synchronous `Transport` contract with one reusable physical session per instance, it can be selected beneath these paths just like Angus. If it instead uses Simple Java Mail's `CustomMailer`, it owns its own lifecycle and must not be stacked on this pool.
 
 ## Current release
+
+`4.5.0` (5 November 2026) adds explicit per-registration OAuth suppliers under [#39](https://github.com/simple-java-mail/smtp-connection-pool/issues/39).
+Existing APIs and property-based callers remain supported; no public authentication-strategy object or new Session is required.
 
 `4.4.1` (5 November 2026)
 

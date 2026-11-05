@@ -44,8 +44,8 @@
 		<simple-java-mail.version>9.3.0</simple-java-mail.version>
 		<subethasmtp.version>7.2.2</subethasmtp.version>
 		<jspecify.version>1.0.0</jspecify.version>
-		<core.compatibility.version>4.4.0</core.compatibility.version>
-		<core.compatibility.sha256>83189bf3d29bfcace65c0d09671bae2f13b20df547b16ffb5ed0a003c449f16d</core.compatibility.sha256>
+		<core.compatibility.version>4.4.1</core.compatibility.version>
+		<core.compatibility.sha256>c7a96b335a5381d365db426b1a96a144c4171d95a9a794991e420286f79133e5</core.compatibility.sha256>
 	</properties>
 
 	<scm>

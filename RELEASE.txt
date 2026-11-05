@@ -3,6 +3,15 @@ https://github.com/simple-java-mail/smtp-connection-pool
 
 RELEASE NOTES SMTP Connection Pool
 
+v4.5.0 (5 November 2026)
+
+- #39: Bind an optional OAuth token supplier directly to a Session's pool registration, with either cluster-default sizing
+  or explicit expiration/core/max settings. A supplier selects OAuth; null selects ordinary provider authentication and
+  skips legacy pool OAuth properties. Tokens are obtained only for physical connection or reconnection, without changing
+  Session properties. Existing registration overloads, implicit claims and property-based callers retain their behavior.
+- Registration identity, connected reuse, selected-provider username/TLS resolution, cancellation and lease ownership remain
+  supported. This does not add live account rotation for established connections or close application-owned callbacks.
+
 v4.4.1 (5 November 2026)
 
 - #38: Keep the selected provider's username resolution when opening or reconnecting OAuth connections.
